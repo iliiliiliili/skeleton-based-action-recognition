@@ -3,8 +3,8 @@ model_saved_name: ./runs/stbln/ntu_cv_agcn_joint_lwopenpose2d
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
-  data_path: ../HAR_data/ntu_lw_openpose/2dSkeletons/xview/train_data_joint.npy
-  label_path: ../HAR_data/ntu_lw_openpose/2dSkeletons/xview/train_label.pkl
+  data_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/train_data_joint.npy
+  label_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/train_label.pkl
   debug: False
   random_choose: False
   random_shift: False
@@ -13,8 +13,8 @@ train_feeder_args:
   normalization: False
 
 test_feeder_args:
-  data_path: ../HAR_data/ntu_lw_openpose/2dSkeletons/xview/val_data_joint.npy
-  label_path: ../HAR_data/ntu_lw_openpose/2dSkeletons/xview/val_label.pkl
+  data_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/val_data_joint.npy
+  label_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/val_label.pkl
 
 # model
 model: model.agcn.AGCN
@@ -34,7 +34,7 @@ base_lr: 0.1
 step: [30, 40]
 
 # training
-device: [4,5,6,7]
+device: [0,1,2]
 batch_size: 64
 test_batch_size: 128
 num_epoch: 50
