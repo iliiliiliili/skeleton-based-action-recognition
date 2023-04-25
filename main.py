@@ -9,11 +9,9 @@ import random
 import shutil
 import time
 from collections import OrderedDict
-
 import numpy as np
 # torch
 import torch
-import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.optim as optim
 import yaml
@@ -21,7 +19,6 @@ from tensorboardX import SummaryWriter
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm import tqdm
-from thop import profile
 
 
 class GradualWarmupScheduler(_LRScheduler):
@@ -62,7 +59,7 @@ def get_parser():
                         help='the work folder for storing results')
     parser.add_argument('-model_saved_name', default='')
     parser.add_argument('--config',
-                        default='./config/nturgbd-cross-view/test_bone.yaml',
+                        default='./config/nturgbd-cross-view/agcn/train_joint_agcn.yaml',
                         help='path to the configuration file')
 
     parser.add_argument('--results_file_name', default='results.txt')
@@ -651,7 +648,7 @@ if __name__ == '__main__':
     p = parser.parse_args()
     if p.config is not None:
         with open(p.config, 'r') as f:
-            default_arg = yaml.load(f)
+            default_arg = yaml.load(f, Loader=yaml.Loader)
         key = vars(p).keys()
         for k in default_arg.keys():
             if k not in key:
