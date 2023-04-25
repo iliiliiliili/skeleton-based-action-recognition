@@ -1,10 +1,11 @@
-work_dir: ./work_dir/ntu/xview/stgcn_joint
-model_saved_name: ./runs/stbln/ntu_cv_stgcn_joint
+work_dir: ./work_dir/ntu_io2/xview/stgcn_joint
+model_saved_name: ./runs/io2/ntu_cv_stgcn_joint
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
   data_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/train_data_joint.npy
   label_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/train_label.pkl
+  class_filter_path: /home/io/har/skeleton-based-action-recognition/data/single_person_classes.txt
   debug: False
   random_choose: False
   random_shift: False
@@ -15,6 +16,7 @@ train_feeder_args:
 test_feeder_args:
   data_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/val_data_joint.npy
   label_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/val_label.pkl
+  class_filter_path: /home/io/har/skeleton-based-action-recognition/data/single_person_classes.txt
 
 # model
 model: model.stgcn.STGCN
@@ -32,8 +34,8 @@ base_lr: 0.1
 step: [30, 40]
 
 # training
-device: [0,1,2]
-batch_size: 60
+device: [0,1,2,3]
+batch_size: 64
 test_batch_size: 128
 num_epoch: 50
 nesterov: True

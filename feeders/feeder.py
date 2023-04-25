@@ -9,7 +9,7 @@ from feeders import tools
 
 
 class Feeder(Dataset):
-    def __init__(self, data_path, label_path,
+    def __init__(self, data_path, label_path, class_filter_path=None,
                  random_choose=False, random_shift=False, random_move=False,
                  window_size=-1, normalization=False, debug=False, use_mmap=True):
         """
@@ -27,6 +27,7 @@ class Feeder(Dataset):
         self.debug = debug
         self.data_path = data_path
         self.label_path = label_path
+        self.class_filter_path = class_filter_path
         self.random_choose = random_choose
         self.random_shift = random_shift
         self.random_move = random_move
@@ -57,6 +58,24 @@ class Feeder(Dataset):
             self.label = self.label[0:100]
             self.data = self.data[0:100]
             self.sample_name = self.sample_name[0:100]
+        
+        if self.class_filter_path is not None:
+            with open(self.class_filter_path, "r") as f:
+                classes_text = f.readline()
+            
+            selected_classes = [int(a) for a in classes_text.split(" ")]
+
+            print(f"Filtering with selected classes: {selected_classes}")
+
+            all_indices = range(len(self.label))
+            selected_indices = [a for a in all_indices if self.label[a] in selected_classes]
+            self.label = [self.label[a] for a in selected_indices]
+            self.data = self.data[selected_indices]
+            self.sample_name = [self.sample_name[a] for a in selected_indices]
+
+            print(f"Final dataset size: {len(all_indices)}")
+
+        print()
 
     def get_mean_map(self):
         data = self.data

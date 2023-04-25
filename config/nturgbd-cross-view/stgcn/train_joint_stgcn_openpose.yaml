@@ -1,10 +1,10 @@
-work_dir: ./work_dir/ntu/xview/stgcn_joint
-model_saved_name: ./runs/stbln/ntu_cv_stgcn_joint
+work_dir: ./work_dir/io_ntu2/xview/stgcn_joint
+model_saved_name: ./runs/io2/ntu_cv_stgcn_joint
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
-  data_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/train_data_joint.npy
-  label_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/train_label.pkl
+  data_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/xview/train_data_joint.npy
+  label_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/xview/train_label.pkl
   debug: False
   random_choose: False
   random_shift: False
@@ -13,16 +13,17 @@ train_feeder_args:
   normalization: False
 
 test_feeder_args:
-  data_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/val_data_joint.npy
-  label_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/val_label.pkl
+  data_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/xview/val_data_joint.npy
+  label_path: /home/io/har/pose_rotation/datasets/ntu3d_opendpose/xview/val_label.pkl
 
 # model
 model: model.stgcn.STGCN
 model_args:
   num_class: 60
-  num_point: 25
+  num_point: 18
   num_person: 2
-  graph: graph.ntu_rgb_d.Graph
+  in_channels: 2
+  graph: graph.kinetics.Graph
   graph_args:
     labeling_mode: 'spatial'
 
@@ -32,7 +33,7 @@ base_lr: 0.1
 step: [30, 40]
 
 # training
-device: [0,1,2]
+device: [0,1,2,3]
 batch_size: 60
 test_batch_size: 128
 num_epoch: 50
