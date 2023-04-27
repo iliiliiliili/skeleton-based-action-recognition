@@ -5,6 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "VSTGCN NTU",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"4,5,6,7"
+            },
+            "args": [
+                "--config=./config/nturgbd-cross-view/vstgcn/train_joint_vstgcn.yaml",
+            ]
+        },
+        {
             "name": "Agcn NTU",
             "type": "python",
             "request": "launch",
@@ -44,6 +58,8 @@
             },
             "args": [
                 "--config=./config/nturgbd-cross-view/stgcn/train_joint_stgcn.yaml",
+                "--work-dir=./work_dir/ntu_io_debug/xview/stgcn_joint",
+                "-model_saved_name=./runs/io_debug/ntu_cv_stgcn_joint",
             ]
         }
     ]
