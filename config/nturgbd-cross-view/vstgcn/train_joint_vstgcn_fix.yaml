@@ -1,11 +1,10 @@
-work_dir: ./work_dir/ntu_io2_small/xview/stgcn_joint
-model_saved_name: ./runs/io2_small/ntu_cv_stgcn_joint
+work_dir: ./work_dir/vntu/xview/vstgcn_joint_fix_2
+model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_fix_2
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
   data_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/train_data_joint.npy
   label_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/train_label.pkl
-  # class_filter_path: /home/io/har/skeleton-based-action-recognition/data/two_classes.txt
   debug: False
   random_choose: False
   random_shift: False
@@ -16,10 +15,9 @@ train_feeder_args:
 test_feeder_args:
   data_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/val_data_joint.npy
   label_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/val_label.pkl
-  # class_filter_path: /home/io/har/skeleton-based-action-recognition/data/single_person_classes.txt
 
 # model
-model: model.stgcn.STGCN
+model: model.vnn_stgcn.VStgcn
 model_args:
   num_class: 60
   num_point: 25
@@ -27,6 +25,7 @@ model_args:
   graph: graph.ntu_rgb_d.Graph
   graph_args:
     labeling_mode: 'spatial'
+  FIX_GAUSSIAN: 0.5
 
 #optim
 weight_decay: 0.0001
@@ -34,8 +33,8 @@ base_lr: 0.1
 step: [30, 40]
 
 # training
-device: [0]
-batch_size: 16
-test_batch_size: 128
+device: [0,1,2,3]
+batch_size: 8
+test_batch_size: 8
 num_epoch: 50
 nesterov: True

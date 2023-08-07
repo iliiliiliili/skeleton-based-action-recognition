@@ -194,9 +194,19 @@ class VStgcn(nn.Module):
         graph_args=dict(),
         in_channels=3,
         cuda_=True,
+        FIX_GAUSSIAN=None,
         **kwargs
     ):
         super().__init__()
+
+
+        VariationalBase.FIX_GAUSSIAN = FIX_GAUSSIAN
+
+        if VariationalBase.FIX_GAUSSIAN is not None:
+            print("FIX_GAUSSIAN", VariationalBase.FIX_GAUSSIAN)
+            print("FIX_GAUSSIAN", VariationalBase.FIX_GAUSSIAN)
+            print("FIX_GAUSSIAN", VariationalBase.FIX_GAUSSIAN)
+            print("FIX_GAUSSIAN", VariationalBase.FIX_GAUSSIAN)
 
         if graph is None:
             raise ValueError()

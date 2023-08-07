@@ -1,5 +1,5 @@
-work_dir: ./work_dir/ntu_io2_small/xview/stgcn_joint
-model_saved_name: ./runs/io2_small/ntu_cv_stgcn_joint
+work_dir: ./work_dir/ntu_io/xview/stgcn_joint_fix_1
+model_saved_name: ./runs/io/ntu_cv_stgcn_join_fix_1
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
@@ -34,8 +34,8 @@ base_lr: 0.1
 step: [30, 40]
 
 # training
-device: [0]
-batch_size: 16
-test_batch_size: 128
+device: [0,1,2,3]
+batch_size: 8
+test_batch_size: 8
 num_epoch: 50
 nesterov: True
