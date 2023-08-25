@@ -184,6 +184,8 @@ def get_parser():
     parser.add_argument('--only_train_part', default=False)
     parser.add_argument('--only_train_epoch', default=0)
     parser.add_argument('--warm_up_epoch', default=0)
+    parser.add_argument('--init_vnn_from', default="", type=str)
+    parser.add_argument('--continue_global_step', default=False)
     return parser
 
 
@@ -274,6 +276,46 @@ class Processor():
                     print('  ' + d)
                 state.update(weights)
                 self.model.load_state_dict(state)
+
+        if self.arg.init_vnn_from:
+            if self.arg.continue_global_step:
+                self.global_step = int(arg.init_vnn_from[:-3].split('-')[-1])
+
+            self.print_log('Init vnn weights from {}.'.format(self.arg.init_vnn_from))
+            if '.pkl' in self.arg.init_vnn_from:
+                with open(self.arg.init_vnn_from, 'r') as f:
+                    weights = pickle.load(f)
+            else:
+                weights = torch.load(self.arg.init_vnn_from)
+            weights = OrderedDict([[k.split('module.')[-1], v.cuda(output_device)] for k, v in weights.items()])
+
+
+            def pair_parameter(name):
+
+                if "tcn.means.0.weight" in name:
+                    return (name, name.replace("tcn.means.0.weight", "tcn.t_conv.weight"))
+                elif "tcn.means.1" in name:
+                    return (name, name.replace("tcn.means.1", "tcn.bn"))
+                if "residual.means.0.weight" in name:
+                    return (name, name.replace("residual.means.0.weight", "residual.t_conv.weight"))
+                elif "residual.means.1" in name:
+                    return (name, name.replace("residual.means.1", "residual.bn"))
+                else:
+                    return (name, name.replace("means.0.", ""))
+
+
+            paired_parameters = [pair_parameter(a) for a in self.model.state_dict().keys() if "means" in a]
+            unpaired_parameters = [a for a in self.model.state_dict().keys() if ("means" not in a) and ("stds" not in a)]
+
+            final_params = {}
+
+            for a, b in paired_parameters:
+                final_params[a] = weights[b]
+
+            for a in unpaired_parameters:
+                final_params[a] = weights[a]
+
+            self.model.load_state_dict(final_params, strict=False)
 
         if type(self.arg.device) is list:
             if len(self.arg.device) > 1:

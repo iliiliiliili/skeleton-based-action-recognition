@@ -5,6 +5,40 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "IVSTGCN NTU",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"0,1"
+            },
+            "args": [
+                "--config=./config/nturgbd-cross-view/vstgcn/train_joint_ivstgcn.yaml",
+                // "--device=0",
+                // "--batch-size=16",
+                // "--test-batch-size=16",
+            ]
+        },
+        {
+            "name": "VSTGCN FIX NTU",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"1"
+            },
+            "args": [
+                "--config=./config/nturgbd-cross-view/vstgcn/train_joint_vstgcn_fix.yaml",
+                "--device=0",
+                "--batch-size=16",
+                "--test-batch-size=16",
+            ]
+        },
+        {
             "name": "VSTGCN NTU",
             "type": "python",
             "request": "launch",
@@ -12,13 +46,13 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "env":{
-                "CUDA_VISIBLE_DEVICES":"5"
+                "CUDA_VISIBLE_DEVICES":"0,1"
             },
             "args": [
                 "--config=./config/nturgbd-cross-view/vstgcn/train_joint_vstgcn.yaml",
-                "--device=0",
-                "--batch-size=2",
-                "--test-batch-size=2",
+                // "--device=0",
+                // "--batch-size=16",
+                // "--test-batch-size=16",
             ]
         },
         {

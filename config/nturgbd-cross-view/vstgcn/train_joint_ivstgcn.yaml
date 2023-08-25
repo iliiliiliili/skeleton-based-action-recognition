@@ -1,5 +1,5 @@
-work_dir: ./work_dir/vntu/xview/vstgcn_joint_big_5
-model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_big_5
+work_dir: ./work_dir/vntu/xview/vstgcn_joint_big_init_xavier_uniform001_2
+model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_big_init_xavier_uniform001_2
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
@@ -25,8 +25,9 @@ model_args:
   graph: graph.ntu_rgb_d.Graph
   graph_args:
     labeling_mode: 'spatial'
-  samples: 2
+  samples: 1
   test_samples: 20
+  INIT_WEIGHTS: "xavier_uniform0b:stds:0.01:0.01"
 
 #optim
 weight_decay: 0.0001
@@ -34,8 +35,10 @@ base_lr: 0.1
 step: [30, 40]
 
 # training
-device: [0, 1]
+device: [0]
 batch_size: 64
 test_batch_size: 5
 num_epoch: 50
 nesterov: True
+init_vnn_from: ./runs/stbln/ntu_cv_stgcn_joint-49-31350.pt
+continue_global_step: False

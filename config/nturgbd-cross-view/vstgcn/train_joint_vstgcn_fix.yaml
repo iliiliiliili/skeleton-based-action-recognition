@@ -1,5 +1,5 @@
-work_dir: ./work_dir/vntu/xview/vstgcn_joint_fix_2
-model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_fix_2
+work_dir: ./work_dir/vntu/xview/vstgcn_joint_fix_big_3
+model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_fix_big_3
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
@@ -25,7 +25,8 @@ model_args:
   graph: graph.ntu_rgb_d.Graph
   graph_args:
     labeling_mode: 'spatial'
-  FIX_GAUSSIAN: 0.5
+  FIX_GAUSSIAN: 0
+  samples: 3
 
 #optim
 weight_decay: 0.0001

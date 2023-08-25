@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from vnn import VariationalBase, VariationalConvolution
+from .variational import VariationalBase, VariationalConvolution, init_weights as vnn_init_weights
 from typing import Any, List, Optional, Literal, Tuple, Union
 
 
@@ -153,6 +153,20 @@ class VariationalGraphConvolution(VariationalBase):
             batch_norm_mode=None,
             global_std_mode=global_std_mode,
         )
+    def _init_weights(self):
+
+        all_submodules = [
+            lambda x: (x.g_conv[0].weight, True),
+            lambda x: (x.g_conv[0].bias, False),
+            lambda x: (x.g_conv[1].weight, True),
+            lambda x: (x.g_conv[1].bias, False),
+            lambda x: (x.g_conv[2].weight, True),
+            lambda x: (x.g_conv[2].bias, False),
+            lambda x: (x.gcn_residual[0].weight if isinstance(x.gcn_residual, torch.nn.Sequential) else None, True),
+            lambda x: (x.gcn_residual[0].bias if isinstance(x.gcn_residual, torch.nn.Sequential) else None, False),
+        ]
+
+        vnn_init_weights(self, all_submodules)
 
 
 class VariationalStgcnBlock(nn.Module):
@@ -195,12 +209,18 @@ class VStgcn(nn.Module):
         in_channels=3,
         cuda_=True,
         FIX_GAUSSIAN=None,
+        INIT_WEIGHTS="usual",
+        samples=4,
+        test_samples=4,
         **kwargs
     ):
         super().__init__()
 
+        self.default_samples = samples
+        self.test_samples = test_samples
 
         VariationalBase.FIX_GAUSSIAN = FIX_GAUSSIAN
+        VariationalBase.INIT_WEIGHTS = INIT_WEIGHTS
 
         if VariationalBase.FIX_GAUSSIAN is not None:
             print("FIX_GAUSSIAN", VariationalBase.FIX_GAUSSIAN)
@@ -236,7 +256,15 @@ class VStgcn(nn.Module):
         self.fc = nn.Linear(256, num_class)
         weights_init(self.fc, bs=num_class)
 
-    def forward(self, x, samples=5, combine_predictions=True):
+    def forward(self, x, samples=None, combine_predictions=True):
+
+        if samples is None:
+            if self.training:
+                samples = self.default_samples
+            else:
+                samples = self.test_samples
+
+
         N, C, T, V, M = x.size()
         x = x.permute(0, 4, 3, 1, 2).contiguous().view(N, M * V * C, T)
         x = self.data_bn(x)
