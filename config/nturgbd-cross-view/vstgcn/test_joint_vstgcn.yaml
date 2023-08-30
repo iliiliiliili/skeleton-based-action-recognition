@@ -20,12 +20,21 @@ model_args:
 
 # test 
 phase: test
-device: [0,1,2,3,4,5]
-test_batch_size: 512
 # weights: ./runs/vntu/ntu_cv_vstgcn_joint_big_2-49-29400.pt
 # weights: ./runs/vntu/ntu_cv_vstgcn_joint_big_3-49-14700.pt
-weights: ./runs/vntu/ntu_cv_vstgcn_joint_big_5-79-47040.pt
+# weights: ./runs/vntu/ntu_cv_vstgcn_joint_big_5-79-47040.pt
+# weights: ./runs/vntu/ntu_cv_vstgcn_joint_big_5-79-47040.pt
+# weights: ./runs/vntu/ntu_cv_vstgcn_joint_big_init_xavier_uniform001_slr_3-29-17640.pt
+# weights: ./runs/vntu/ntu_cv_vstgcn_joint_big_init_xavier_uniform001_slr_2-29-17640.pt
+weights: ./runs/vntu/ntu_cv_vstgcn_joint_big_init_xavier_uniform001_slr_4-29-17640.pt
 
-work_dir: ./work_dir/vntu/xview/vstgcn_joint_big_5
-model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_big_5
+# work_dir: ./work_dir/vntu/xview/vstgcn_joint_big_5
+# model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_big_5
+work_dir: ./work_dir/vntu/xview/ntu_cv_vstgcn_joint_big_init_xavier_uniform001_slr_4
+model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_big_init_xavier_uniform001_slr_4
 save_score: True
+samples: [1,2,3,4,5,10,15,20,30,40]
+device: [0,1,2,3,4,5]
+test_batch_size: [512,512,512,512,512,256,256,128,128,128]
+# device: [0,1]
+# test_batch_size: [512,512,512,512,512,256,256,128,128,128]

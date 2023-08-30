@@ -186,6 +186,7 @@ def get_parser():
     parser.add_argument('--warm_up_epoch', default=0)
     parser.add_argument('--init_vnn_from', default="", type=str)
     parser.add_argument('--continue_global_step', default=False)
+    parser.add_argument('--samples', default=None)
     return parser
 
 
@@ -246,7 +247,8 @@ class Processor():
         shutil.copy2(inspect.getfile(Model), self.arg.work_dir)
         # print(Model)
         self.model = Model(**self.arg.model_args).cuda(output_device)
-        print(self.model)
+        if not self.arg.multiple:
+            print(self.model)
         self.loss = nn.CrossEntropyLoss().cuda(output_device)
         if self.arg.weights:
             self.global_step = int(arg.weights[:-3].split('-')[-1])
@@ -460,6 +462,19 @@ class Processor():
             elif arg.model_name.lower() in ["stgcn", "agcn", "tagcn", "stbln"]:
                 torch.save(weights,
                            self.arg.model_saved_name + '-' + str(epoch) + '-' + str(int(self.global_step)) + '.pt')
+        else:
+            state_dict = self.model.state_dict()
+            weights = OrderedDict([[k, v.cpu()] for k, v in state_dict.items()])
+            if arg.model_name.lower() in ["pstgcn", "pstbln"]:
+                torch.save(weights,
+                           self.arg.model_saved_name + '-' + str(len(self.arg.model_args['topology'])) + '-' +
+                           str(self.arg.model_args['topology'][-1]) + '.latest.pt')
+            elif arg.model_name.lower() in ["stgcn", "agcn", "tagcn", "stbln"]:
+                torch.save(weights,
+                           self.arg.model_saved_name + '.latest.pt')
+                with open(self.arg.model_saved_name + '.latest.params', "w") as f:
+                    print(self.arg.model_saved_name + '-' + str(epoch) + '-' + str(int(self.global_step)) + '.pt', file=f)
+
         return loss, acc
 
     def eval(self, epoch, save_score=False, loader_name=['test'], wrong_file=None, result_file=None):
@@ -519,6 +534,9 @@ class Processor():
             if accuracy > self.best_acc:
                 self.best_acc = accuracy
             # self.lr_scheduler.step(loss)
+
+            result = ""
+
             print('Accuracy: ', accuracy, ' model: ', self.arg.model_saved_name)
             if self.arg.phase == 'train':
                 self.val_writer.add_scalar('loss', loss, self.global_step)
@@ -533,10 +551,15 @@ class Processor():
                 self.print_log('\tTop{}: {:.2f}%'.format(
                     k, 100 * self.data_loader[ln].dataset.top_k(score, k)))
 
+                result += "Top{}: {:.2f}% ".format(
+                    k, 100 * self.data_loader[ln].dataset.top_k(score, k))
+
             if save_score:
                 with open('{}/epoch{}_{}_score.pkl'.format(
                         self.arg.work_dir, epoch + 1, ln), 'wb') as f:
                     pickle.dump(score_dict, f)
+            
+            return result
 
     def prog_init(self, block_iter):
         if block_iter == 0:
@@ -660,10 +683,16 @@ class Processor():
             if self.arg.weights is None:
                 raise ValueError('Please appoint --weights.')
             self.arg.print_log = False
-            self.print_log('Model:   {}.'.format(self.arg.model))
-            self.print_log('Weights: {}.'.format(self.arg.weights))
-            self.eval(epoch=0, save_score=self.arg.save_score, loader_name=['test'], wrong_file=wf, result_file=rf)
-            self.print_log('Done.\n')
+
+            if not self.arg.multiple:
+                self.print_log('Model:   {}.'.format(self.arg.model))
+                self.print_log('Weights: {}.'.format(self.arg.weights))
+            
+            result = self.eval(epoch=0, save_score=self.arg.save_score, loader_name=['test'], wrong_file=wf, result_file=rf)
+            self.arg.all_results[-1]["result"] = result
+
+            if not self.arg.multiple:
+                self.print_log('Done.\n')
 
 
 def str2bool(v):
@@ -697,10 +726,46 @@ if __name__ == '__main__':
                 print('WRONG ARG: {}'.format(k))
                 assert (k in key)
         parser.set_defaults(**default_arg)
-
+        
     arg = parser.parse_args()
-    init_seed(0)
-    processor = Processor(arg)
-    processor.start()
+    arg.multiple = False
+
+    if arg.samples is None:
+        init_seed(0)
+        processor = Processor(arg)
+        processor.start()
+    else:
+        print(":::Multiple tests:::")
+
+        samples = arg.samples
+        batch_sizes = arg.test_batch_size
+        arg.all_results = []
+        arg.multiple = True
+
+        for sample, batch_size in zip(samples, batch_sizes):
+
+            arg.samples = None
+            arg.model_args["test_samples"] = sample
+            arg.test_batch_size = batch_size
+
+            print (f":::samples={sample} batch={batch_size}:::")
+
+            arg.all_results.append({
+                "samples": sample,
+                "batch": batch_size,
+                "result": "",
+            })
+
+            init_seed(0)
+            processor = Processor(arg)
+            processor.start()
+            
+            with open(f"{arg.model_saved_name}.test.result", "w") as f:
+                for a in arg.all_results:
+                    print(a, file=f)
+
+        for a in arg.all_results:
+            print(a)
+
 
 

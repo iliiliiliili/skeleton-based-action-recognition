@@ -5,6 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Test VSTGCN NTU",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                // "CUDA_VISIBLE_DEVICES":"0,1",
+                "CUDA_VISIBLE_DEVICES":"2,3,4,5,6,7",
+            },
+            "args": [
+                "--config=./config/nturgbd-cross-view/vstgcn/test_joint_vstgcn.yaml",
+                // "--device=0",
+                // "--batch-size=16",
+                // "--test-batch-size=16",
+            ]
+        },
+        {
             "name": "IVSTGCN NTU",
             "type": "python",
             "request": "launch",
