@@ -251,7 +251,7 @@ class Processor():
             print(self.model)
         self.loss = nn.CrossEntropyLoss().cuda(output_device)
         if self.arg.weights:
-            self.global_step = int(arg.weights[:-3].split('-')[-1])
+            self.global_step = 0 if ".latest." in self.arg.weights else int(self.arg.weights[:-3].split('-')[-1])
             self.print_log('Load weights from {}.'.format(self.arg.weights))
             if '.pkl' in self.arg.weights:
                 with open(self.arg.weights, 'r') as f:
