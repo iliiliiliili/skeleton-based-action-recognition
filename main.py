@@ -603,8 +603,8 @@ class Processor():
         if self.arg.phase == 'train':
             if arg.model_name.lower() in ["stgcn", "agcn", "tagcn", "stbln"] or self.arg.model_args['topology'] != []:
                 for epoch in range(self.arg.start_epoch, self.arg.num_epoch):
-                    if self.lr < 1e-3:
-                        break
+                    # if self.lr < 1e-3:
+                    #     break
                     save_model = (epoch + 1 == self.arg.num_epoch)
                     self.train(epoch, save_model=save_model)
                     self.eval(epoch, save_score=self.arg.save_score, loader_name=['test'])
