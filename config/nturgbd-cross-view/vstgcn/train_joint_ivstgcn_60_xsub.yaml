@@ -1,5 +1,5 @@
-work_dir: ./work_dir/baselines/xsub/agcn_ntu_60_joint
-model_saved_name: ./runs/baselines/xsub_agcn_ntu_60_joint
+work_dir: ./work_dir/ivstgcn/xsub/ivstgcn_ntu_60_joint
+model_saved_name: ./runs/ivstgcn/xsub_ivstgcn_ntu_60_joint
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
@@ -19,8 +19,7 @@ test_feeder_args:
   # class_filter_path: /home/io/har/skeleton-based-action-recognition/data/single_person_classes.txt
 
 # model
-model: model.agcn.AGCN
-model_name: agcn
+model: model.vnn_stgcn.VStgcn
 model_args:
   num_class: 60
   num_point: 25
@@ -28,6 +27,8 @@ model_args:
   graph: graph.ntu_rgb_d.Graph
   graph_args:
     labeling_mode: 'spatial'
+  samples: 2
+  test_samples: 20
 
 #optim
 weight_decay: 0.0001
@@ -35,8 +36,10 @@ base_lr: 0.1
 step: [30, 40]
 
 # training
-device: [0,1]
-batch_size: 32 # 64
-test_batch_size: 128
-num_epoch: 50
+device: [0, 1, 2, 3]
+batch_size: 64
+test_batch_size: 64
+num_epoch: 30
 nesterov: True
+init_vnn_from: ./runs/stbln/ntu_cv_stgcn_joint-49-31350.pt
+continue_global_step: False
