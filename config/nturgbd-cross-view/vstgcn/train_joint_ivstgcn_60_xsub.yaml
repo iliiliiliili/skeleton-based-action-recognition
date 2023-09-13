@@ -32,8 +32,8 @@ model_args:
 
 #optim
 weight_decay: 0.0001
-base_lr: 0.1
-step: [30, 40]
+base_lr: 0.05
+step: [10, 15, 20]
 
 # training
 device: [0, 1, 2, 3]
