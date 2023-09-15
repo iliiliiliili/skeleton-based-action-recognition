@@ -1,8 +1,8 @@
 # feeder
 feeder: feeders.feeder.Feeder
 test_feeder_args:
-  data_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/val_data_joint.npy
-  label_path: /home/io/har/pose_rotation/datasets/ntu3d/normalized/val_label.pkl
+  data_path: /data/sets/ntu3d/ntu60/xsub/val_data_joint.npy
+  label_path: /data/sets/ntu3d/ntu60/xsub/val_label.pkl
   debug: False
 
 # model
