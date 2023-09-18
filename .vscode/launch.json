@@ -5,6 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "IUVAGCN NTU-60 sub",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"0"
+            },
+            "args": [
+                "--config=./config/nturgbd-cross-view/vagcn/train_joint_iuvagcn_60_xsub.yaml",
+                "--device=0",
+                "--batch-size=2",
+                "--test-batch-size=2",
+            ]
+        },
+        {
             "name": "VAGCN NTU-60 sub",
             "type": "python",
             "request": "launch",
@@ -12,7 +29,7 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "env":{
-                "CUDA_VISIBLE_DEVICES":"6"
+                "CUDA_VISIBLE_DEVICES":"0"
             },
             "args": [
                 "--config=./config/nturgbd-cross-view/vagcn/train_joint_vagcn_60_xsub.yaml",
