@@ -5,6 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "VAGCN NTU-60 sub",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"6"
+            },
+            "args": [
+                "--config=./config/nturgbd-cross-view/vagcn/train_joint_vagcn_60_xsub.yaml",
+                "--device=0",
+                "--batch-size=2",
+                "--test-batch-size=2",
+            ]
+        },
+        {
             "name": "Test VSTGCN NTU",
             "type": "python",
             "request": "launch",

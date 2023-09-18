@@ -1,5 +1,5 @@
-work_dir: ./work_dir/vstgcn/xsub/vstgcn_ntu_60_joint
-model_saved_name: ./runs/vstgcn/xsub_vstgcn_ntu_60_joint
+work_dir: ./work_dir/vstgcn/xsub/vagcn_ntu_60_joint
+model_saved_name: ./runs/vstgcn/xsub_vagcn_ntu_60_joint
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
@@ -28,6 +28,8 @@ model_args:
   graph: graph.ntu_rgb_d.Graph
   graph_args:
     labeling_mode: 'spatial'
+  samples: 1
+  test_samples: 10
 
 #optim
 weight_decay: 0.0001
