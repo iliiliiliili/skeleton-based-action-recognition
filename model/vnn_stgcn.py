@@ -264,7 +264,6 @@ class VStgcn(nn.Module):
             else:
                 samples = self.test_samples
 
-
         N, C, T, V, M = x.size()
         x = x.permute(0, 4, 3, 1, 2).contiguous().view(N, M * V * C, T)
         x = self.data_bn(x)
