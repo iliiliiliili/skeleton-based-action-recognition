@@ -1,4 +1,4 @@
-work_dir: ./work_dir/baselines/kinetics/agcn_joint
+work_dir: ./work_dir/baselines/kinetics/agcn_kinetics_joint
 model_saved_name: ./runs/baselines/agcn_kinetics_joint
 # feeder
 feeder: feeders.feeder.Feeder
