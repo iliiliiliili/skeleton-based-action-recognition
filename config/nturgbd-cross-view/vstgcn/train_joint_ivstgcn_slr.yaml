@@ -1,5 +1,5 @@
-work_dir: ./work_dir/vntu/xview/vstgcn_joint_big_init_xavier_uniform001_slr_5
-model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_big_init_xavier_uniform001_slr_5
+work_dir: ./work_dir/vntu/xview/vstgcn_joint_big_init_xavier_uniform001_slr_3_
+model_saved_name: ./runs/vntu/ntu_cv_vstgcn_joint_big_init_xavier_uniform001_slr_3_
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
@@ -31,8 +31,8 @@ model_args:
 
 #optim
 weight_decay: 0.0001
-base_lr: 0.1
-step: [5, 10, 15, 20]
+base_lr: 0.05
+step: [10, 15, 20]
 
 # training
 device: [0, 1]
