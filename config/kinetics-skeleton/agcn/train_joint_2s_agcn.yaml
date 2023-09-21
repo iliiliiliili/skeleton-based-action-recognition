@@ -35,7 +35,7 @@ step: [45, 55]
 
 # training
 device: [0,1,2,3]
-batch_size: 64
+batch_size: 82
 test_batch_size: 128
 num_epoch: 65
 nesterov: True
