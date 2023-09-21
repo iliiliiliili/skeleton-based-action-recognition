@@ -1,5 +1,5 @@
-work_dir: ./work_dir/vagcn/xsub/vagcn_ntu_60_joint
-model_saved_name: ./runs/vagcn/xsub_vagcn_ntu_60_joint
+work_dir: ./work_dir/vagcn/xsub/ivagcn_ntu_60_joint
+model_saved_name: ./runs/vagcn/xsub_ivagcn_ntu_60_joint
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
@@ -37,7 +37,7 @@ base_lr: 0.05
 step: [10, 15, 20]
 
 # training
-device: [0]
+device: [0,1,2,3]
 batch_size: 32
 test_batch_size: 64
 num_epoch: 30
