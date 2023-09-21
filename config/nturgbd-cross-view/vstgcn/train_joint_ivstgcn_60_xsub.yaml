@@ -21,7 +21,7 @@ test_feeder_args:
 # model
 model: model.vnn_stgcn.VStgcn
 model_args:
-  num_class: 60
+  num_class: 120 # 60 # we make it 120 as stgcn best was trained with 120 but on 60 classes so the last 60 are random or "supportive"
   num_point: 25
   num_person: 2
   graph: graph.ntu_rgb_d.Graph

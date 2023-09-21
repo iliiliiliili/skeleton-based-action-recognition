@@ -5,6 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "2sAGCN Kinetics",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"0"
+            },
+            "args": [
+                "--config=./config/kinetics-skeleton/agcn/train_joint_2s_agcn.yaml",
+                "--device=0",
+                "--batch-size=7",
+                "--test-batch-size=2",
+            ]
+        },
+        {
             "name": "IUVAGCN NTU-60 sub",
             "type": "python",
             "request": "launch",
