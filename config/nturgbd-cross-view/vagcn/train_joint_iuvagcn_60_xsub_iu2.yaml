@@ -1,5 +1,5 @@
-work_dir: ./work_dir/vagcn/xsub/iuvagcn_ntu_60_joint
-model_saved_name: ./runs/vagcn/xsub_iuvagcn_ntu_60_joint
+work_dir: ./work_dir/vagcn/xsub/iuvagcn_ntu_60_joint_iu2
+model_saved_name: ./runs/vagcn/xsub_iuvagcn_ntu_60_joint_iu2
 # feeder
 feeder: feeders.feeder.Feeder
 train_feeder_args:
@@ -28,7 +28,7 @@ model_args:
   graph: graph.ntu_rgb_d.Graph
   graph_args:
     labeling_mode: 'spatial'
-  samples: 2
+  samples: 1
   test_samples: 10
   iu_layers: [5, 10]
 
@@ -38,7 +38,7 @@ base_lr: 0.1
 step: [30, 40]
 
 # training
-device: [0, 1, 2, 3]
+device: [0, 1, 2, 3,4,5,6,7]
 batch_size: 64
 test_batch_size: 64
 num_epoch: 50
