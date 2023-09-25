@@ -5,6 +5,36 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "New VStgcn NTU",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"0,1"
+            },
+            "args": [
+                "--config=./config/ntu60/xsub/joint/vstgcn/train.yaml",
+                "--num-epoch=0",
+                "--weights=./runs/vnn/ntu60/xsub/joint/vstgcn_s1b64.best.pt"
+            ]
+        },
+        {
+            "name": "New Stgcn NTU",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"0,1"
+            },
+            "args": [
+                "--config=./config/ntu60/xsub/joint/stgcn/train.yaml",
+            ]
+        },
+        {
             "name": "2sAGCN Kinetics",
             "type": "python",
             "request": "launch",

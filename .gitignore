@@ -2,6 +2,8 @@
 
 .idea/
 runs/
+old_runs/
+old_config/
 work_dir/
 
 ### Python template
