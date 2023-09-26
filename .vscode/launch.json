@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "New AGCN NTU",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env":{
+                "CUDA_VISIBLE_DEVICES":"0,1"
+            },
+            "args": [
+                "--config=./config/ntu60/xview/joint/agcn/test.yaml",
+                // "--num-epoch=0",
+                // "--weights=./runs/vnn/ntu60/xsub/joint/vstgcn_s1b64.best.pt"
+            ]
+        },
+        {
             "name": "New VStgcn NTU",
             "type": "python",
             "request": "launch",

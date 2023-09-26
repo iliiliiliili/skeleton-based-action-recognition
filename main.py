@@ -1067,7 +1067,7 @@ if __name__ == "__main__":
 
         arg.all_results = []
         
-        if "test_samples" not in arg:
+        if "test_samples" not in arg or arg.test_samples is None:
             arg.all_results.append(
                 {
                     "result": "",
