@@ -491,15 +491,15 @@ class Processor:
                     + ".pt"
                 )
             elif arg.model_name.lower() in ["stgcn", "agcn", "tagcn", "stbln"]:
-                torch.save(
-                    weights,
-                    self.arg.model_saved_name
-                    + "-"
-                    + str(epoch)
-                    + "-"
-                    + str(int(self.global_step))
-                    + ".pt",
-                )
+                # torch.save(
+                #     weights,
+                #     self.arg.model_saved_name
+                #     + "-"
+                #     + str(epoch)
+                #     + "-"
+                #     + str(int(self.global_step))
+                #     + ".pt",
+                # )
                 torch.save(
                     weights,
                     self.arg.model_saved_name
