@@ -1031,6 +1031,9 @@ def parse_config_parametrized_values(args):
     if "init_vnn_from" in args:
         replace_strings("init_vnn_from")
 
+    if "weights" in args:
+        replace_strings("weights")
+
     if "model_saved_name" not in args:
         args["model_saved_name"] = args["work_dir"]
 
