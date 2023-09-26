@@ -11,4 +11,4 @@ include:
   - base
   - /vnn
 
-batch_size: 40
+batch_size: 32
