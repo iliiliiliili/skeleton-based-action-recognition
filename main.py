@@ -206,6 +206,12 @@ def get_parser():
     parser.add_argument(
         "--weight-decay", type=float, default=0.0005, help="weight decay for optimizer"
     )
+    parser.add_argument(
+        "--batches_per_backpropagation",
+        type=int,
+        default=1,
+        help="Combine multiple batches into one backpropagation step to decrease the per-step training batch size while keeping the same effective batch size",
+    )
     parser.add_argument("--only_train_part", default=False)
     parser.add_argument("--only_train_epoch", default=0)
     parser.add_argument("--warm_up_epoch", default=0)
@@ -263,7 +269,7 @@ class Processor:
         if self.arg.phase == "train":
             self.data_loader["train"] = torch.utils.data.DataLoader(
                 dataset=Feeder(**self.arg.train_feeder_args),
-                batch_size=self.arg.batch_size,
+                batch_size=self.arg.batch_size // self.arg.batches_per_backpropagation,
                 shuffle=True,
                 num_workers=self.arg.num_worker,
                 drop_last=True,
@@ -468,7 +474,6 @@ class Processor:
         return split_time
 
     def save_model(self, arg, epoch, is_best):
-
         if is_best:
             state_dict = self.model.state_dict()
             weights = OrderedDict([[k, v.cpu()] for k, v in state_dict.items()])
@@ -502,13 +507,9 @@ class Processor:
                 # )
                 torch.save(
                     weights,
-                    self.arg.model_saved_name
-                    + ".best.pt",
+                    self.arg.model_saved_name + ".best.pt",
                 )
-                self.arg.best_model_path = (
-                    self.arg.model_saved_name
-                    + ".best.pt"
-                )
+                self.arg.best_model_path = self.arg.model_saved_name + ".best.pt"
         else:
             state_dict = self.model.state_dict()
             weights = OrderedDict([[k, v.cpu()] for k, v in state_dict.items()])
@@ -542,7 +543,9 @@ class Processor:
                         + ".pt",
                         file=f,
                     )
-                    self.arg.trained_model_path = self.arg.model_saved_name + ".latest.pt"
+                    self.arg.trained_model_path = (
+                        self.arg.model_saved_name + ".latest.pt"
+                    )
 
     def train(self, epoch):
         self.model.train()
@@ -581,10 +584,14 @@ class Processor:
                 l1 = 0
             loss = self.loss(output, label) + l1
 
-            # backward
-            self.optimizer.zero_grad()
             loss.backward()
-            self.optimizer.step()
+
+            if ((batch_idx + 1) % self.arg.batches_per_backpropagation == 0) or (
+                batch_idx + 1 == len(process)
+            ):
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+
             loss_value.append(loss.data.item())
             timer["model"] += self.split_time()
 
@@ -841,9 +848,7 @@ class Processor:
                             if self.lr < 1e-3:
                                 break
                             save_model = epoch + 1 == self.arg.num_epoch
-                            train_loss, train_acc = self.train(
-                                epoch
-                            )
+                            train_loss, train_acc = self.train(epoch)
                             # if train_acc > self.best_train_acc:
                             #   self.best_train_acc = train_acc
                             self.eval(
@@ -1003,9 +1008,8 @@ def parse_config_file(config):
 
 
 def parse_config_parametrized_values(args):
-
     if args["device"] == -1:
-        args["device"] = [*range(torch.cuda.device_count())] # All CUDA_VISIBLE_DEVICES
+        args["device"] = [*range(torch.cuda.device_count())]  # All CUDA_VISIBLE_DEVICES
 
     def replace_strings(name):
         if "DATASET_NAME" in args:
@@ -1021,7 +1025,9 @@ def parse_config_parametrized_values(args):
             args[name] = args[name].replace("$MODEL", args["MODEL_NAME"])
 
         if "model_args" in args and "samples" in args["model_args"]:
-            args[name] = args[name].replace("$SAMPLES", str(args["model_args"]["samples"]))
+            args[name] = args[name].replace(
+                "$SAMPLES", str(args["model_args"]["samples"])
+            )
 
         args[name] = args[name].replace("$NUM_EPOCH", str(args["num_epoch"]))
         args[name] = args[name].replace("$BATCH_SIZE", str(args["batch_size"]))
@@ -1062,14 +1068,14 @@ if __name__ == "__main__":
         init_seed(0)
         processor = Processor(arg)
         processor.start()
-    
+
     if arg.phase == "test" or arg.end_test:
         arg.phase = "test"
         if "best_model_path" in arg:
             arg.weights = arg.best_model_path
 
         arg.all_results = []
-        
+
         if "test_samples" not in arg or arg.test_samples is None:
             arg.all_results.append(
                 {
@@ -1079,7 +1085,7 @@ if __name__ == "__main__":
             init_seed(0)
             processor = Processor(arg)
             processor.start()
-            
+
             with open(f"{arg.model_saved_name}.test.result", "w") as f:
                 for a in arg.all_results:
                     print(a, file=f)

@@ -3,10 +3,12 @@ work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE
 # model
 model: model.vnn_stgcn.VStgcn
 model_args:
-  samples: 2
+  samples: 6
 
 MODEL_NAME: vstgcn
 
 include:
   - base
   - /vnn
+
+batches_per_backpropagation: 4

@@ -28,12 +28,12 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "env":{
-                "CUDA_VISIBLE_DEVICES":"0,1"
+                "CUDA_VISIBLE_DEVICES":"0,1,2,3,4,5,6,7"
             },
             "args": [
-                "--config=./config/ntu60/xsub/joint/vstgcn/train.yaml",
-                "--num-epoch=0",
-                "--weights=./runs/vnn/ntu60/xsub/joint/vstgcn_s1b64.best.pt"
+                "--config=./config/kinetics/joint/vstgcn/train.yaml",
+                // "--num-epoch=0",
+                // "--weights=./runs/vnn/ntu60/xsub/joint/vstgcn_s1b64.best.pt"
             ]
         },
         {
