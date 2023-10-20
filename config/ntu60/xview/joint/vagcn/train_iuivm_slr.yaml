@@ -1,4 +1,4 @@
-work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE
 
 # model
 model: model.iu_vnn_agcn.IUVAGCN
@@ -6,7 +6,7 @@ model_args:
   samples: 2
   iu_layers: [4, 8]
 
-MODEL_NAME: vagcn
+MODEL_NAME: iuivagcn
 
 include:
   - base

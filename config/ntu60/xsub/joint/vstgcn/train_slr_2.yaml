@@ -1,9 +1,9 @@
-work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLESb$BATCH_SIZE_slr 
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLESb$BATCH_SIZE_slr
 
 # model
 model: model.vnn_stgcn.VStgcn
 model_args:
-  samples: 7
+  samples: 8
 
 MODEL_NAME: vstgcn
 

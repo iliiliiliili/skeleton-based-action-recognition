@@ -3,7 +3,7 @@ work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLESb$BATCH_SIZE
 # model
 model: model.vnn_stgcn.VStgcn
 model_args:
-  samples: 3
+  samples: 2
 
 MODEL_NAME: vstgcn
 
@@ -11,4 +11,4 @@ include:
   - base
   - /vnn
 
-batch_size: 32
+batch_size: 64
