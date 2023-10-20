@@ -12,6 +12,7 @@ include:
   - base
   - /vnn
 
+batch_size: 48
 base_lr: 0.05
 step: [10, 15, 20]
-init_vnn_from: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL.best.pt
+init_vnn_from: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/agcn.best.pt
