@@ -1,0 +1,15 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLESb$BATCH_SIZE_bpb
+
+# model
+model: model.vnn_stgcn.VStgcn
+model_args:
+  samples: 4
+
+MODEL_NAME: vstgcn
+
+include:
+  - base
+  - /vnn
+
+batch_size: 64
+batches_per_backpropagation: 4
