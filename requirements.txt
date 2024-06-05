@@ -1,0 +1,4 @@
+tensorboardX
+tqdm
+pyyaml
+plotnine
