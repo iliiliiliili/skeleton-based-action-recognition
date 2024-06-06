@@ -212,6 +212,12 @@ def get_parser():
         default=1,
         help="Combine multiple batches into one backpropagation step to decrease the per-step training batch size while keeping the same effective batch size",
     )
+    parser.add_argument(
+        "--eval_runs",
+        type=int,
+        default=1,
+        help="How many times to run evaluation for the same model",
+    )
     parser.add_argument("--only_train_part", default=False)
     parser.add_argument("--only_train_epoch", default=0)
     parser.add_argument("--warm_up_epoch", default=0)
@@ -625,9 +631,9 @@ class Processor:
         self,
         epoch,
         save_score=False,
-        loader_name=["test"],
         wrong_file=None,
         result_file=None,
+        runs=1,
     ):
         if wrong_file is not None:
             f_w = open(wrong_file, "w")
@@ -635,7 +641,14 @@ class Processor:
             f_r = open(result_file, "w")
         self.model.eval()
         self.print_log("Eval epoch: {}".format(epoch + 1))
-        for ln in loader_name:
+
+        all_topks = {}
+
+        for r in range(runs):
+
+            self.print_log("Eval run: {}/{}".format(r + 1, runs))
+
+            ln = "test"
             loss_value = []
             score_frag = []
             lbls = []
@@ -692,40 +705,54 @@ class Processor:
                 self.best_acc = accuracy
                 self.should_save = True
             # self.lr_scheduler.step(loss)
-
-            result = ""
-
+            
             print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
-            if self.arg.phase == "train":
-                self.val_writer.add_scalar("loss", loss, self.global_step)
-                self.val_writer.add_scalar("loss_l1", l1, self.global_step)
-                self.val_writer.add_scalar("acc", accuracy, self.global_step)
 
-            score_dict = dict(zip(self.data_loader[ln].dataset.sample_name, score))
+            for k in self.arg.show_topk:
+
+                if k not in all_topks:
+                    all_topks[k] = []
+
+                all_topks[k].append(self.data_loader[ln].dataset.top_k(score, k))
+
+        result = ""
+
+        # print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
+        if self.arg.phase == "train":
+            self.val_writer.add_scalar("loss", loss, self.global_step)
+            self.val_writer.add_scalar("loss_l1", l1, self.global_step)
+            self.val_writer.add_scalar("acc", accuracy, self.global_step)
+
+        score_dict = dict(zip(self.data_loader[ln].dataset.sample_name, score))
+        self.print_log(
+            "\tMean {} loss of {} batches: {}.".format(
+                ln, len(self.data_loader[ln]), np.mean(loss_value)
+            )
+        )
+        for k in self.arg.show_topk:
+
+            topks = all_topks[k]
+
+            topk = sum(topks) / len(topks)
+
             self.print_log(
-                "\tMean {} loss of {} batches: {}.".format(
-                    ln, len(self.data_loader[ln]), np.mean(loss_value)
+                "\tTop{}: {:.2f}%".format(
+                    k, 100 * topk
                 )
             )
-            for k in self.arg.show_topk:
-                self.print_log(
-                    "\tTop{}: {:.2f}%".format(
-                        k, 100 * self.data_loader[ln].dataset.top_k(score, k)
-                    )
-                )
 
-                result += "Top{}: {:.2f}% ".format(
-                    k, 100 * self.data_loader[ln].dataset.top_k(score, k)
-                )
+            result += "Top{}: {:.2f}% ".format(
+                k, 100 * topk
+            )
 
-            if save_score:
-                with open(
-                    "{}/epoch{}_{}_score.pkl".format(self.arg.work_dir, epoch + 1, ln),
-                    "wb",
-                ) as f:
-                    pickle.dump(score_dict, f)
+        if save_score:
+            with open(
+                "{}/epoch{}_{}_score.pkl".format(self.arg.work_dir, epoch + 1, ln),
+                "wb",
+            ) as f:
+                pickle.dump(score_dict, f)
 
-            return result
+        return result
 
     def prog_init(self, block_iter):
         if block_iter == 0:
@@ -800,7 +827,7 @@ class Processor:
                     self.train(epoch)
                     self.should_save = False
                     self.eval(
-                        epoch, save_score=self.arg.save_score, loader_name=["test"]
+                        epoch, save_score=self.arg.save_score
                     )
 
                     if self.should_save:
@@ -854,7 +881,6 @@ class Processor:
                             self.eval(
                                 epoch,
                                 save_score=self.arg.save_score,
-                                loader_name=["test"],
                             )
                             acc_block_new = train_acc
                             loss_block_new = train_loss
@@ -935,9 +961,9 @@ class Processor:
             result = self.eval(
                 epoch=0,
                 save_score=self.arg.save_score,
-                loader_name=["test"],
                 wrong_file=wf,
                 result_file=rf,
+                runs=self.arg.eval_runs,
             )
             self.arg.all_results[-1]["result"] = result
 
@@ -1098,6 +1124,7 @@ if __name__ == "__main__":
 
             for sample, batch_size in zip(samples, batch_sizes):
                 arg.samples = None
+                arg.eval_runs = 5
                 arg.model_args["test_samples"] = sample
                 arg.test_batch_size = batch_size
 
