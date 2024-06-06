@@ -3,7 +3,7 @@ work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES
 # model
 model: model.vnn_agcn.VAGCN
 model_args:
-  samples: 1
+  samples: 2
 
 MODEL_NAME: vagcn
 

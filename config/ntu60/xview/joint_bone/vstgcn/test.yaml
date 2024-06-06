@@ -1,4 +1,5 @@
 work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES.best.pt
 
 # model
 model: model.vnn_stgcn.VStgcn
@@ -6,6 +7,8 @@ model_args:
   samples: 2
 
 MODEL_NAME: vstgcn
+
+phase: test
 
 include:
   - base
