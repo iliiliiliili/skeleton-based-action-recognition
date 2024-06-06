@@ -53,6 +53,9 @@ class Experiment:
     def best_top1(self):
         return max([r.top1 for r in self.results])
 
+    def best_top5(self):
+        return max([r.top5 for r in self.results])
+
     def __str__(self):
         result = f"Experiment(network_type={self.network_type}, samples={self.samples}, batch={self.batch}, flags={self.flags}\n"
 
@@ -115,7 +118,7 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
 
     groups = group_experiments(experiments)
 
-    headers = ["dataset", "split", "skeleton", "model type", "network", "top1 acc", "samples", "batch", *extra_flags]
+    headers = ["dataset", "split", "skeleton", "model type", "network", "top1 acc", "top5 acc", "samples", "batch", *extra_flags]
     table = []
 
     for dataset in DATASET_FLAGS:
@@ -136,6 +139,7 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             model_type,
                             experiment.network_type,
                             experiment.best_top1(),
+                            experiment.best_top5(),
                             experiment.samples,
                             experiment.batch,
                             *["+" if f in experiment.flags else "" for f in extra_flags]
@@ -153,11 +157,15 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             "",
                             "",
                             "",
+                            "",
                             *["" for _ in extra_flags]
                         ]
                         table.append(line)
 
-    print(tabulate(table, headers=headers))
+    tab = tabulate(table, headers=headers)
+    print(tab)
+    with open("inclusion_table.txt", "w") as f:
+        print(tab, file=f)
 
 def draw_experiments(experiments: List[Experiment]):
     pass
