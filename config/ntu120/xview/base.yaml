@@ -1,5 +1,4 @@
-
 SPLIT_NAME: xview
 
 include:
-  - base
+    - base
