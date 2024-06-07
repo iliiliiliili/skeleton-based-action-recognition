@@ -6,8 +6,7 @@ model_args:
 
 MODEL_NAME: vagcn
 
-num_epoch: 80
-
 include:
+    - /ntu60/longer
     - base
     - /vnn

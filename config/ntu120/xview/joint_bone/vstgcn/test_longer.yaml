@@ -6,8 +6,6 @@ model_args:
 
 MODEL_NAME: vstgcn
 
-num_epoch: 80
-
 weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE.best.pt
 phase: test
 

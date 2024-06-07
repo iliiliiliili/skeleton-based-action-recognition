@@ -6,8 +6,7 @@ model_args:
 
 MODEL_NAME: vstgcn
 
-num_epoch: 80
-
 include:
+    - /kinetics/longer
     - base
     - /vnn

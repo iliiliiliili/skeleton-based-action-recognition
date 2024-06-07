@@ -164,7 +164,7 @@ def create_agcn_stgcn_configs(path, model_name):
     )
 
 
-def create_vnn_agcn_stgcn_configs(path, model_name):
+def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
 
     os.makedirs(str(path), exist_ok=True)
 
@@ -197,16 +197,18 @@ def create_vnn_agcn_stgcn_configs(path, model_name):
     ]
 
     includes = (["include", [["- base"], ["- /vnn"]]],)
+    includes_longer = (["include", [[f"- /{dataset}/longer"], ["- base"], ["- /vnn"]]],)
 
     def create_train_test(
         name_suffix,
         params,
+        local_includes=includes,
         wights="./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE.best.pt",
     ):
         create_yaml(
             [
                 *params,
-                *includes,
+                *local_includes,
             ],
             path / f"train{name_suffix}.yaml",
         )
@@ -227,41 +229,38 @@ def create_vnn_agcn_stgcn_configs(path, model_name):
     for training_samples in VNN_TRAINING_SAMPLES:
         create_train_test(f"_s{training_samples}", base_params(training_samples))
 
-    create_train_test(
-        f"_longer",
-        [
-            *base_params(VNN_DEFAULT_TRAINING_SAMPLES, "_longer"),
-            ["num_epoch", 80],
-            [],
-        ],
-    )
+        create_train_test(
+            f"_longer_s{training_samples}",
+            base_params(training_samples, "_longer"),
+            includes_longer
+        )
 
-    create_train_test(
-        f"_slr",
-        [
-            *base_params(VNN_DEFAULT_TRAINING_SAMPLES, "_slr"),
-            ["base_lr", 0.05],
-            [],
-        ],
-    )
+        create_train_test(
+            f"_slr_s{training_samples}",
+            [
+                *base_params(training_samples, "_slr"),
+                ["base_lr", 0.05],
+                [],
+            ],
+        )
 
-    create_train_test(
-        f"_bpb",
-        [
-            *base_params(VNN_DEFAULT_TRAINING_SAMPLES, "_bpb"),
-            ["batches_per_backpropagation", 4],
-            [],
-        ],
-    )
-    
-    create_train_test(
-        f"_iv",
-        [
-            *base_params(VNN_DEFAULT_TRAINING_SAMPLES, "_iv"),
-            ["init_vnn_from", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/{baseline_model_name}.best.pt"],
-            [],
-        ],
-    )
+        create_train_test(
+            f"_bpb_s{training_samples}",
+            [
+                *base_params(training_samples, "_bpb"),
+                ["batches_per_backpropagation", 4],
+                [],
+            ],
+        )
+        
+        create_train_test(
+            f"_iv_s{training_samples}",
+            [
+                *base_params(training_samples, "_iv"),
+                ["init_vnn_from", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/{baseline_model_name}.best.pt"],
+                [],
+            ],
+        )
 
 
 def create_kinetics_configs(path):
@@ -296,6 +295,15 @@ def create_kinetics_configs(path):
             ["include", [["- base"]]],
         ],
         path / "base.yaml",
+    )
+    
+    create_yaml(
+        [
+            ["#optimization"],
+            ["step", "[55, 70]"],
+            ["num_epoch", 80],
+        ],
+        path / "longer.yaml",
     )
 
     for stream_type in STREAM_TYPES:
@@ -360,7 +368,7 @@ def create_kinetics_configs(path):
             create_agcn_stgcn_configs(stream_path / model_name, model_name)
 
         for model_name in VNN_MODELS:
-            create_vnn_agcn_stgcn_configs(stream_path / model_name, model_name)
+            create_vnn_agcn_stgcn_configs(stream_path / model_name, model_name, f"kinetics")
 
     print("Created kinetics configs")
 
@@ -396,6 +404,15 @@ def create_ntu_configs(path, classes_count):
             ["include", [["- base"]]],
         ],
         path / "base.yaml",
+    )
+    
+    create_yaml(
+        [
+            ["#optimization"],
+            ["step", "[40, 55]"],
+            ["num_epoch", 65],
+        ],
+        path / "longer.yaml",
     )
 
     for split in SPLITS:
@@ -464,6 +481,7 @@ def create_ntu_configs(path, classes_count):
                     ],
                     [],
                     ["STREAMS_NAME", stream_type],
+                    ([] if stream_type == "joint" else ["model_args", [["in_channels", 6]]]),
                     [],
                     ["include", [["- base"]]],
                 ],
@@ -474,7 +492,7 @@ def create_ntu_configs(path, classes_count):
                 create_agcn_stgcn_configs(stream_path / model_name, model_name)
 
             for model_name in VNN_MODELS:
-                create_vnn_agcn_stgcn_configs(stream_path / model_name, model_name)
+                create_vnn_agcn_stgcn_configs(stream_path / model_name, model_name, f"ntu{classes_count}")
 
     print(f"Created ntu{classes_count} configs")
 
