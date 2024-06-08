@@ -58,11 +58,8 @@ class Experiment:
     results: List[SingleResult]
     age_days: int
 
-    def best_top1(self):
-        return max([r.top1 for r in self.results])
-
-    def best_top5(self):
-        return max([r.top5 for r in self.results])
+    def best_result(self):
+        return max([r for r in self.results], key=lambda r: r.top1)
 
     def __str__(self):
         result = f"Experiment(network_type={self.network_type}, samples={self.samples}, batch={self.batch}, age_days={self.age_days}, flags={self.flags}\n"
@@ -149,9 +146,11 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
         "top5 acc",
         "samples",
         "batch",
+        "test samples",
         *extra_flags,
     ]
     table = []
+    raw_table = []
 
 
     def colored_line(color, line):
@@ -183,11 +182,13 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                     experiments_exist = False
 
                     experiments = groups[dataset][split][skeleton_type][model_type]
-                    experiments = sorted(experiments, key=lambda experiment: -experiment.best_top1())
+                    experiments = sorted(experiments, key=lambda experiment: -experiment.best_result().top1)
 
-                    for experiment in experiments:
+                    for i, experiment in enumerate(experiments):
 
                         experiments_exist = True
+
+                        best_result = experiment.best_result()
 
                         line = [
                             dataset,
@@ -195,16 +196,18 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             skeleton_type,
                             model_type,
                             experiment.network_type,
-                            experiment.best_top1(),
-                            experiment.best_top5(),
-                            experiment.samples,
-                            experiment.batch,
+                            str(best_result.top1) + ("#" if i == 0 else ""),
+                            best_result.top5,
+                            ("" if experiment.samples is None else experiment.samples),
+                            ("" if experiment.batch is None else experiment.batch),
+                            ("" if best_result.samples == -1 else best_result.samples),
                             *[
                                 "+" if f in experiment.flags else ""
                                 for f in extra_flags
                             ],
                         ]
                         table.append(colored_line(experiment_color(experiment), line))
+                        raw_table.append(line)
 
                     if (not experiments_exist) and show_empty:
 
@@ -218,14 +221,17 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             "",
                             "",
                             "",
+                            "",
                             *["" for _ in extra_flags],
                         ]
                         table.append(line)
+                        raw_table.append(line)
 
     tab = tabulate(table, headers=headers)
+    raw_tab = tabulate(raw_table, headers=headers)
     print(tab)
     with open("inclusion_table.txt", "w") as f:
-        print(tab, file=f)
+        print(raw_tab, file=f)
 
 
 def draw_experiments(experiments: List[Experiment]):
