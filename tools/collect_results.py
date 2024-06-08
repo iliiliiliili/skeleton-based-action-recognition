@@ -27,9 +27,16 @@ from plotnine import (
     labeller,
 )
 from tabulate import tabulate
+import datetime
+import simple_colors as colors
 
 DATASET_FLAGS = ["ntu60", "ntu120", "kinetics"]
 SPLIT_FLAGS = ["xview", "xsub", ""]
+DATASET_SPLIT_FLAGS = {
+    "ntu60": ["xview", "xsub"],
+    "ntu120": ["xview", "xsub"],
+    "kinetics": [""],
+}
 SKELETON_TYPE_FLAGS = ["joint", "joint_bone"]
 MODEL_TYPE_FLAGS = ["baselines", "vnn"]
 
@@ -49,6 +56,7 @@ class Experiment:
     batch: int
     flags: List[str]
     results: List[SingleResult]
+    age_days: int
 
     def best_top1(self):
         return max([r.top1 for r in self.results])
@@ -57,13 +65,17 @@ class Experiment:
         return max([r.top5 for r in self.results])
 
     def __str__(self):
-        result = f"Experiment(network_type={self.network_type}, samples={self.samples}, batch={self.batch}, flags={self.flags}\n"
+        result = f"Experiment(network_type={self.network_type}, samples={self.samples}, batch={self.batch}, age_days={self.age_days}, flags={self.flags}\n"
 
         for r in self.results:
             result += f"    {r}\n"
 
         result += ")"
         return result
+
+
+def file_age_in_days(path):
+    return (datetime.datetime.today() - datetime.datetime.fromtimestamp(os.path.getmtime(path))).days
 
 
 def group_experiments(experiments: List[Experiment]):
@@ -82,7 +94,7 @@ def group_experiments(experiments: List[Experiment]):
                         result[dataset][split][skeleton_type] = {}
                     if model_type not in result[dataset][split][skeleton_type]:
                         result[dataset][split][skeleton_type][model_type] = []
-    
+
     for experiment in experiments:
         dataset = None
         split = ""
@@ -98,10 +110,14 @@ def group_experiments(experiments: List[Experiment]):
                 skeleton_type = flag
             elif flag in MODEL_TYPE_FLAGS:
                 model_type = flag
-        
-        if (dataset is not None) and (skeleton_type is not None) and (model_type is not None):
+
+        if (
+            (dataset is not None)
+            and (skeleton_type is not None)
+            and (model_type is not None)
+        ):
             result[dataset][split][skeleton_type][model_type].append(experiment)
-    
+
     return result
 
 
@@ -111,24 +127,65 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
 
     for experiment in experiments:
         for flag in experiment.flags:
-            if not ((flag in DATASET_FLAGS) or (flag in SPLIT_FLAGS) or (flag in SKELETON_TYPE_FLAGS) or (flag in MODEL_TYPE_FLAGS)):
+            if not (
+                (flag in DATASET_FLAGS)
+                or (flag in SPLIT_FLAGS)
+                or (flag in SKELETON_TYPE_FLAGS)
+                or (flag in MODEL_TYPE_FLAGS)
+            ):
                 extra_flags.add(flag)
-    
+
     extra_flags = list(extra_flags)
 
     groups = group_experiments(experiments)
 
-    headers = ["dataset", "split", "skeleton", "model type", "network", "top1 acc", "top5 acc", "samples", "batch", *extra_flags]
+    headers = [
+        "dataset",
+        "split",
+        "skeleton",
+        "model type",
+        "network",
+        "top1 acc",
+        "top5 acc",
+        "samples",
+        "batch",
+        *extra_flags,
+    ]
     table = []
 
+
+    def colored_line(color, line):
+
+        if color is None:
+            return line
+
+        return [color(a) for a in line]
+
+    def experiment_color(experiment: Experiment):
+        
+        color = None
+        
+        if experiment.age_days <= 0:
+            color = colors.magenta
+        elif experiment.age_days <= 3:
+            color = colors.green
+        elif experiment.age_days <= 30:
+            color = colors.yellow
+        
+        return color
+
+
     for dataset in DATASET_FLAGS:
-        for split in SPLIT_FLAGS:
+        for split in DATASET_SPLIT_FLAGS[dataset]:
             for skeleton_type in SKELETON_TYPE_FLAGS:
                 for model_type in MODEL_TYPE_FLAGS:
-                    
+
                     experiments_exist = False
 
-                    for experiment in groups[dataset][split][skeleton_type][model_type]:
+                    experiments = groups[dataset][split][skeleton_type][model_type]
+                    experiments = sorted(experiments, key=lambda experiment: -experiment.best_top1())
+
+                    for experiment in experiments:
 
                         experiments_exist = True
 
@@ -142,12 +199,15 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             experiment.best_top5(),
                             experiment.samples,
                             experiment.batch,
-                            *["+" if f in experiment.flags else "" for f in extra_flags]
+                            *[
+                                "+" if f in experiment.flags else ""
+                                for f in extra_flags
+                            ],
                         ]
-                        table.append(line)
-                    
+                        table.append(colored_line(experiment_color(experiment), line))
+
                     if (not experiments_exist) and show_empty:
-                        
+
                         line = [
                             dataset,
                             split,
@@ -158,7 +218,7 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             "",
                             "",
                             "",
-                            *["" for _ in extra_flags]
+                            *["" for _ in extra_flags],
                         ]
                         table.append(line)
 
@@ -166,6 +226,7 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
     print(tab)
     with open("inclusion_table.txt", "w") as f:
         print(tab, file=f)
+
 
 def draw_experiments(experiments: List[Experiment]):
     pass
@@ -239,6 +300,7 @@ def main(root="./runs", draw=True, show_inclusion=True):
             batch=batch,
             flags=flags,
             results=experiment_results,
+            age_days=file_age_in_days(full_file_name)
         )
 
         all_experiments.append(experiment)

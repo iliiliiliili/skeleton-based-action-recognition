@@ -1,3 +1,4 @@
 fire
 tabulate
 plotnine
+simple_colors
