@@ -7,7 +7,11 @@ from typing import List
 import json
 
 DATASETS = ["ntu60", "ntu120", "kinetics"]
-SPLITS = ["xview", "xsub"]
+DATASET_SPLITS = {
+    "ntu60": ["xview", "xsub"],
+    "ntu120": ["xset", "xsub"],
+    "kinetics": [""],
+}
 STREAM_TYPES = ["joint", "joint_bone"]
 MODEL_TYPES = ["baselines", "vnn"]
 BASELINE_MODELS = ["agcn", "stgcn"]
@@ -415,7 +419,7 @@ def create_ntu_configs(path, classes_count):
         path / "longer.yaml",
     )
 
-    for split in SPLITS:
+    for split in DATASET_SPLITS[f"ntu{classes_count}"]:
         split_path = path / split
 
         os.makedirs(str(split_path), exist_ok=True)
