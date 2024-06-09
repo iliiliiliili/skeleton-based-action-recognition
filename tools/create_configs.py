@@ -249,6 +249,16 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
         )
 
         create_train_test(
+            f"_slrhb_s{training_samples * 2}",
+            [
+                *base_params(training_samples * 2, "_slr"),
+                ["base_lr", 0.05],
+                ["batch_size", 32],
+                [],
+            ],
+        )
+
+        create_train_test(
             f"_bpb_s{training_samples}",
             [
                 *base_params(training_samples, "_bpb"),
