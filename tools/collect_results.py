@@ -26,7 +26,7 @@ from plotnine import (
     scale_color_discrete,
     labeller,
 )
-from tabulate import tabulate
+from tabulate import tabulate, SEPARATING_LINE
 import datetime
 import simple_colors as colors
 
@@ -226,6 +226,9 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                         ]
                         table.append(line)
                         raw_table.append(line)
+
+                table.append(SEPARATING_LINE)
+                raw_table.append(SEPARATING_LINE)
 
     tab = tabulate(table, headers=headers)
     raw_tab = tabulate(raw_table, headers=headers)
