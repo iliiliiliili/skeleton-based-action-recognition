@@ -31,11 +31,11 @@ import datetime
 import simple_colors as colors
 
 DATASET_FLAGS = ["ntu60", "ntu120", "kinetics"]
-SPLIT_FLAGS = ["xset", "xview", "xsub", ""]
+SPLIT_FLAGS = ["xset", "xview", "xsub", "all"]
 DATASET_SPLIT_FLAGS = {
     "ntu60": ["xview", "xsub"],
     "ntu120": ["xset", "xsub"],
-    "kinetics": [""],
+    "kinetics": ["all"],
 }
 SKELETON_TYPE_FLAGS = ["joint", "joint_bone"]
 MODEL_TYPE_FLAGS = ["baselines", "vnn"]
