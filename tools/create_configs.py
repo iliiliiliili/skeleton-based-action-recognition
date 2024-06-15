@@ -372,6 +372,7 @@ def create_kinetics_configs(path):
                 ],
                 [],
                 ["STREAMS_NAME", stream_type],
+                ([] if stream_type == "joint" else ["model_args", [["in_channels", 6]]]),
                 [],
                 ["include", [["- base"]]],
             ],
