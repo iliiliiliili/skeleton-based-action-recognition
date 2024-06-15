@@ -342,7 +342,7 @@ class VAGCN(nn.Module):
 
         # print('data size', x.size())
         N, C, T, V, M = x.size()
-        x = x[:, :3, :, :, :]  # for mediapipe
+        # x = x[:, :3, :, :, :]  # for mediapipe
         x = x.permute(0, 4, 3, 1, 2).contiguous().view(N, M * V * C, T)
         x = self.data_bn(x)
         x = (
