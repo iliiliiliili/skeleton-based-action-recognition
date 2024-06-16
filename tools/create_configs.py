@@ -207,7 +207,8 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
         name_suffix,
         params,
         local_includes=includes,
-        wights="./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE.best.pt",
+        model_name_suffix=None,
+        weights=lambda model_name_suffix: f"./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE{model_name_suffix}.best.pt",
     ):
         create_yaml(
             [
@@ -220,7 +221,7 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
         create_yaml(
             [
                 *params,
-                ["weights", wights],
+                ["weights", weights(name_suffix if model_name_suffix is None else model_name_suffix)],
                 ["phase", "test"],
                 [],
                 *includes,
@@ -236,7 +237,8 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
         create_train_test(
             f"_longer_s{training_samples}",
             base_params(training_samples, "_longer"),
-            includes_longer
+            includes_longer,
+            model_name_suffix="_longer",
         )
 
         create_train_test(
@@ -246,6 +248,7 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
                 ["base_lr", 0.05],
                 [],
             ],
+            model_name_suffix="_slr",
         )
 
         create_train_test(
@@ -256,6 +259,7 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
                 ["batch_size", 32],
                 [],
             ],
+            model_name_suffix="_slr",
         )
 
         create_train_test(
@@ -265,6 +269,7 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
                 ["batches_per_backpropagation", 4],
                 [],
             ],
+            model_name_suffix="_bpb",
         )
         
         create_train_test(
@@ -274,6 +279,7 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
                 ["init_vnn_from", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/{baseline_model_name}.best.pt"],
                 [],
             ],
+            model_name_suffix="_iv",
         )
 
 

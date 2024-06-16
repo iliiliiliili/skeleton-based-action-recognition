@@ -8,7 +8,7 @@ MODEL_NAME: vstgcn
 
 batches_per_backpropagation: 4
 
-weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE.best.pt
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_bpb.best.pt
 phase: test
 
 include:

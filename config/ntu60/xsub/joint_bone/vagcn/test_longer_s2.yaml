@@ -6,7 +6,7 @@ model_args:
 
 MODEL_NAME: vagcn
 
-weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE.best.pt
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_longer.best.pt
 phase: test
 
 include:
