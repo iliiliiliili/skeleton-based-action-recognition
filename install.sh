@@ -1,3 +1,5 @@
+#!/bin/bash -i
+
 conda create -n vgcn python=3.10
 conda activate vgcn
 conda env list

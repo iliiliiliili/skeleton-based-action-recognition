@@ -423,7 +423,29 @@ def init_weights(self, all_submodules = None):
 
         if "std" in fill_what:
             fill(self.stds)
-    elif init_type == "xavier_uniform0b":
+    elif init_type == "xavier_uniform_fb":
+        fill_what = params[0]
+        gain_kernel = float(params[1])
+        gain_bias = float(params[2])
+
+        def fill(target):
+            
+            for func_submodule in all_submodules:
+                submodule, is_weight = func_submodule(target)
+
+                if submodule is not None:
+                    if is_weight:
+                        torch.nn.init.xavier_uniform_(submodule, gain=gain_kernel)
+                    else:
+                        submodule.data.fill_(gain_bias)
+
+
+        if "mean" in fill_what:
+            fill(self.means)
+
+        if "std" in fill_what:
+            fill(self.stds)
+    elif init_type == "xavier_uniform_0b":
         fill_what = params[0]
         gain_kernel = float(params[1])
         gain_bias = float(params[2])
@@ -457,6 +479,48 @@ def init_weights(self, all_submodules = None):
 
                 if submodule is not None:
                     torch.nn.init.xavier_normal_(submodule, gain=gain_kernel if is_weight else gain_bias)
+
+        if "mean" in fill_what:
+            fill(self.means)
+
+        if "std" in fill_what:
+            fill(self.stds)
+    elif init_type == "xavier_normal_fb":
+        fill_what = params[0]
+        gain_kernel = float(params[1])
+        gain_bias = float(params[2])
+
+        def fill(target):
+            
+            for func_submodule in all_submodules:
+                submodule, is_weight = func_submodule(target)
+
+                if submodule is not None:
+                    if is_weight:
+                        torch.nn.init.xavier_normal_(submodule, gain=gain_kernel if is_weight else gain_bias)
+                    else:
+                        submodule.data.fill_(gain_bias)
+
+        if "mean" in fill_what:
+            fill(self.means)
+
+        if "std" in fill_what:
+            fill(self.stds)
+    elif init_type == "xavier_normal_0b":
+        fill_what = params[0]
+        gain_kernel = float(params[1])
+        gain_bias = float(params[2])
+
+        def fill(target):
+            
+            for func_submodule in all_submodules:
+                submodule, is_weight = func_submodule(target)
+
+                if submodule is not None:
+                    if is_weight:
+                        torch.nn.init.xavier_normal_(submodule, gain=gain_kernel if is_weight else gain_bias)
+                    else:
+                        torch.nn.init.zeros_(submodule)
 
         if "mean" in fill_what:
             fill(self.means)

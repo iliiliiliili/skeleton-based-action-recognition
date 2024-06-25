@@ -1,0 +1,14 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_xnfb0x2
+
+model: model.vnn_stgcn.VStgcn
+model_args:
+    samples: 2
+    INIT_WEIGHTS: xavier_normal_fb:stds:0.01:0.001
+
+MODEL_NAME: vstgcn
+
+init_vnn_from: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/stgcn.best.pt
+
+include:
+    - base
+    - /vnn

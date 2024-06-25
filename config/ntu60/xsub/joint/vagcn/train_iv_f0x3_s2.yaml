@@ -1,0 +1,14 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_f0x3
+
+model: model.vnn_agcn.VAGCN
+model_args:
+    samples: 2
+    INIT_WEIGHTS: fill:stds:0.001:0.001
+
+MODEL_NAME: vagcn
+
+init_vnn_from: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/agcn.best.pt
+
+include:
+    - base
+    - /vnn

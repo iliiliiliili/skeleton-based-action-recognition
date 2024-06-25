@@ -182,7 +182,7 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
         "vstgcn": "stgcn",
     }[model_name]
 
-    base_params = lambda samples, name_suffix="": [
+    base_params = lambda samples, name_suffix="", model_params=[]: [
         [
             "work_dir",
             f"./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE{name_suffix}",
@@ -193,6 +193,7 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
             "model_args",
             [
                 ["samples", samples],
+                *model_params,
             ],
         ],
         [],
@@ -230,6 +231,31 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
         )
 
     create_train_test("", base_params(VNN_DEFAULT_TRAINING_SAMPLES))
+
+    def create_iv_configs(training_samples):
+
+        for init_vnn_name, init_vnn_weights in [
+            ("usual", "usual"),
+            ("f0x3", "fill:stds:0.001:0.001"),
+            ("f0x4", "fill:stds:0.0001:0.0001"),
+            ("xu0b0x2", "xavier_uniform0b:stds:0.01:0.001"),
+            ("xufb0x2", "xavier_uniform_fb:stds:0.01:0.001"),
+            ("xnfb0x2", "xavier_normal_fb:stds:0.01:0.001"),
+            ("xn0b0x2", "xavier_uniform_0b:stds:0.01:0.001"),
+        ]:
+
+            create_train_test(
+                f"_iv_{init_vnn_name}_s{training_samples}",
+                [
+                    *base_params(training_samples, f"_iv_{init_vnn_name}", [
+                        ["INIT_WEIGHTS", init_vnn_weights]
+                    ]),
+                    ["init_vnn_from", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/{baseline_model_name}.best.pt"],
+                    [],
+                ],
+                model_name_suffix=f"_iv_{init_vnn_name}",
+            )
+
 
     for training_samples in VNN_TRAINING_SAMPLES:
         create_train_test(f"_s{training_samples}", base_params(training_samples))
@@ -271,16 +297,8 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
             ],
             model_name_suffix="_bpb",
         )
-        
-        create_train_test(
-            f"_iv_s{training_samples}",
-            [
-                *base_params(training_samples, "_iv"),
-                ["init_vnn_from", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/{baseline_model_name}.best.pt"],
-                [],
-            ],
-            model_name_suffix="_iv",
-        )
+
+        create_iv_configs(training_samples)
 
 
 def create_kinetics_configs(path):
