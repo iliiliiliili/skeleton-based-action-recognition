@@ -276,6 +276,15 @@ def main(root="./runs", draw=True, show_inclusion=True):
             elif params[i] == "b":
                 batch = int(params[i + 1])
                 i += 1
+            elif params[i] in ["xufb", "xnfb"]:
+                flags.append(params[i] + params[i + 1] + params[i + 2] + params[i + 3])
+                i += 3
+            elif params[i] in ["xu", "xn"]:
+                flags.append(params[i] + params[i + 1] + params[i + 2] + params[i + 3] + params[i + 4])
+                i += 4
+            elif params[i] in ["f"]:
+                flags.append(params[i] + params[i + 1] + params[i + 2] + params[i + 3])
+                i += 3
             else:
                 flags.append(params[i])
             i += 1
