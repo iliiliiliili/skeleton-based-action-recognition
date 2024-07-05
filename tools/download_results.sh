@@ -10,6 +10,8 @@ echo "charid"
 rsync -avz --prune-empty-dirs --include "*/"  --include="*.test.result" --exclude="*" $charid:~/har/skeleton-based-action-recognition/runs ./
 echo "titid"
 rsync -avz --prune-empty-dirs --include "*/"  --include="*.test.result" --exclude="*" $titid:~/har/skeleton-based-action-recognition/runs ./
+echo "cycid"
+rsync -avz --prune-empty-dirs --include "*/"  --include="*.test.result" --exclude="*" $cycid:~/har/skeleton-based-action-recognition/runs ./
 
 conda activate vgcn
 python tools/collect_results.py

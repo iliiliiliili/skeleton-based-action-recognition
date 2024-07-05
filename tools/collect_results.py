@@ -1,7 +1,4 @@
-from math import exp
-from unittest import result
 from fire import Fire
-from pathlib import Path
 import os
 import re
 from dataclasses import dataclass
@@ -168,7 +165,7 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
             color = colors.magenta
         elif experiment.age_days <= 3:
             color = colors.green
-        elif experiment.age_days <= 30:
+        elif experiment.age_days <= 7:
             color = colors.yellow
         
         return color
