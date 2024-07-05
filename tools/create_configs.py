@@ -17,7 +17,7 @@ MODEL_TYPES = ["baselines", "vnn"]
 BASELINE_MODELS = ["agcn", "stgcn"]
 VNN_MODELS = ["vagcn", "vstgcn"]
 VNN_DEFAULT_TRAINING_SAMPLES = 2
-VNN_TRAINING_SAMPLES = [1, 2, 4]
+VNN_TRAINING_SAMPLES = [1, 2, 4, 8, 16]
 NTU_CLASSES = [60, 120]
 
 datasets = {
