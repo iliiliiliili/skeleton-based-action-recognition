@@ -1092,6 +1092,11 @@ if __name__ == "__main__":
     arg = parser.parse_args()
     arg.multiple = False
 
+    if os.path.exists(f"{arg.model_saved_name}.test.result"):
+        raise Exception(
+            f"Model {arg.model_saved_name} is already tested"
+        )
+
     if arg.phase == "train":
         init_seed(0)
         processor = Processor(arg)
