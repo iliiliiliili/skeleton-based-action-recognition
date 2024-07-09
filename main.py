@@ -302,45 +302,6 @@ class Processor:
         if not self.arg.multiple:
             print(self.model)
         self.loss = nn.CrossEntropyLoss().cuda(output_device)
-        if self.arg.weights:
-            self.global_step = (
-                0
-                if (".latest." in self.arg.weights or ".best." in self.arg.weights)
-                else int(self.arg.weights[:-3].split("-")[-1])
-            )
-            self.print_log("Load weights from {}.".format(self.arg.weights))
-            if ".pkl" in self.arg.weights:
-                with open(self.arg.weights, "r") as f:
-                    weights = pickle.load(f)
-            else:
-                weights = torch.load(self.arg.weights)
-            weights = OrderedDict(
-                [
-                    [k.split("module.")[-1], v.cuda(output_device)]
-                    for k, v in weights.items()
-                ]
-            )
-            keys = list(weights.keys())
-            # print(keys)
-            for w in self.arg.ignore_weights:
-                for key in keys:
-                    if w in key:
-                        if weights.pop(key, None) is not None:
-                            self.print_log(
-                                "Sucessfully Remove Weights: {}.".format(key)
-                            )
-                        else:
-                            self.print_log("Can Not Remove Weights: {}.".format(key))
-            try:
-                self.model.load_state_dict(weights)
-            except:
-                state = self.model.state_dict()
-                diff = list(set(state.keys()).difference(set(weights.keys())))
-                print("Can not find these weights:")
-                for d in diff:
-                    print("  " + d)
-                state.update(weights)
-                self.model.load_state_dict(state)
 
         if self.arg.init_vnn_from:
             if self.arg.continue_global_step:
@@ -399,6 +360,47 @@ class Processor:
                 final_params[a] = weights[a]
 
             self.model.load_state_dict(final_params, strict=False)
+
+        if self.arg.weights:
+            self.global_step = (
+                0
+                if (".latest." in self.arg.weights or ".best." in self.arg.weights)
+                else int(self.arg.weights[:-3].split("-")[-1])
+            )
+            self.print_log("Load weights from {}.".format(self.arg.weights))
+            if ".pkl" in self.arg.weights:
+                with open(self.arg.weights, "r") as f:
+                    weights = pickle.load(f)
+            else:
+                weights = torch.load(self.arg.weights)
+            weights = OrderedDict(
+                [
+                    [k.split("module.")[-1], v.cuda(output_device)]
+                    for k, v in weights.items()
+                ]
+            )
+            keys = list(weights.keys())
+            # print(keys)
+            for w in self.arg.ignore_weights:
+                for key in keys:
+                    if w in key:
+                        if weights.pop(key, None) is not None:
+                            self.print_log(
+                                "Sucessfully Remove Weights: {}.".format(key)
+                            )
+                        else:
+                            self.print_log("Can Not Remove Weights: {}.".format(key))
+            try:
+                self.model.load_state_dict(weights)
+            except:
+                state = self.model.state_dict()
+                diff = list(set(state.keys()).difference(set(weights.keys())))
+                print("Can not find these weights:")
+                for d in diff:
+                    print("  " + d)
+                state.update(weights)
+                self.model.load_state_dict(state)
+
 
         if type(self.arg.device) is list:
             if len(self.arg.device) > 1:
