@@ -170,6 +170,12 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
         
         return color
 
+    table.append(colored_line(colors.cyan, headers))
+    raw_table.append(headers)
+    table.append(SEPARATING_LINE)
+    raw_table.append(SEPARATING_LINE)
+
+    last_table_len = 2
 
     for dataset in DATASET_FLAGS:
         for split in DATASET_SPLIT_FLAGS[dataset]:
@@ -226,9 +232,17 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
 
                 table.append(SEPARATING_LINE)
                 raw_table.append(SEPARATING_LINE)
+            
+            if len(table) - last_table_len > 20:
+                table.append(colored_line(colors.cyan, headers))
+                raw_table.append(headers)
+                table.append(SEPARATING_LINE)
+                raw_table.append(SEPARATING_LINE)
 
-    tab = tabulate(table, headers=headers)
-    raw_tab = tabulate(raw_table, headers=headers)
+                last_table_len = len(table)
+
+    tab = tabulate(table)
+    raw_tab = tabulate(raw_table)
     print(tab)
     with open("inclusion_table.txt", "w") as f:
         print(raw_tab, file=f)
