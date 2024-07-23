@@ -69,7 +69,10 @@ class Experiment:
 
 
 def file_age_in_days(path):
-    return (datetime.datetime.today() - datetime.datetime.fromtimestamp(os.path.getmtime(path))).days
+    return (
+        datetime.datetime.today()
+        - datetime.datetime.fromtimestamp(os.path.getmtime(path))
+    ).days
 
 
 def group_experiments(experiments: List[Experiment]):
@@ -118,9 +121,15 @@ def group_experiments(experiments: List[Experiment]):
 def show_inclusion_table(experiments: List[Experiment], show_empty=True):
 
     extra_flags = set()
+    value_flags = set()
 
     for experiment in experiments:
         for flag in experiment.flags:
+
+            if isinstance(flag, tuple):
+                flag = flag[0]
+                value_flags.add(flag)
+
             if not (
                 (flag in DATASET_FLAGS)
                 or (flag in SPLIT_FLAGS)
@@ -149,7 +158,6 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
     table = []
     raw_table = []
 
-
     def colored_line(color, line):
 
         if color is None:
@@ -158,16 +166,16 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
         return [color(a) for a in line]
 
     def experiment_color(experiment: Experiment):
-        
+
         color = None
-        
+
         if experiment.age_days <= 0:
             color = colors.magenta
         elif experiment.age_days <= 3:
             color = colors.green
         elif experiment.age_days <= 7:
             color = colors.yellow
-        
+
         return color
 
     table.append(colored_line(colors.cyan, headers))
@@ -185,13 +193,24 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                     experiments_exist = False
 
                     experiments = groups[dataset][split][skeleton_type][model_type]
-                    experiments = sorted(experiments, key=lambda experiment: -experiment.best_result().top1)
+                    experiments = sorted(
+                        experiments,
+                        key=lambda experiment: -experiment.best_result().top1,
+                    )
 
                     for i, experiment in enumerate(experiments):
 
                         experiments_exist = True
 
                         best_result = experiment.best_result()
+
+                        def flag_to_text(f):
+                            if f in value_flags:
+                                for ef in experiment.flags:
+                                    if isinstance(ef, tuple) and ef[0] == f:
+                                        return ef[1]
+                            else:
+                                return "+" if f in experiment.flags else ""
 
                         line = [
                             dataset,
@@ -204,10 +223,7 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             ("" if experiment.samples is None else experiment.samples),
                             ("" if experiment.batch is None else experiment.batch),
                             ("" if best_result.samples == -1 else best_result.samples),
-                            *[
-                                "+" if f in experiment.flags else ""
-                                for f in extra_flags
-                            ],
+                            *[flag_to_text(f) for f in extra_flags],
                         ]
                         table.append(colored_line(experiment_color(experiment), line))
                         raw_table.append(line)
@@ -232,7 +248,7 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
 
                 table.append(SEPARATING_LINE)
                 raw_table.append(SEPARATING_LINE)
-            
+
             if len(table) - last_table_len > 20:
                 table.append(colored_line(colors.cyan, headers))
                 raw_table.append(headers)
@@ -277,6 +293,7 @@ def main(root="./runs", draw=True, show_inclusion=True):
         samples = None
         batch = None
         flags = []
+        iv_type = None
 
         i = 0
 
@@ -288,14 +305,28 @@ def main(root="./runs", draw=True, show_inclusion=True):
                 batch = int(params[i + 1])
                 i += 1
             elif params[i] in ["xufb", "xnfb"]:
-                flags.append(params[i] + params[i + 1] + params[i + 2] + params[i + 3])
+                iv_type = params[i] + params[i + 1] + params[i + 2] + params[i + 3]
+                flags.append(("iv_type", iv_type))
                 i += 3
             elif params[i] in ["xu", "xn"]:
-                flags.append(params[i] + params[i + 1] + params[i + 2] + params[i + 3] + params[i + 4])
-                i += 4
+                iv_type = (
+                    params[i]
+                    + params[i + 1]
+                    + params[i + 2]
+                    + params[i + 3]
+                    + params[i + 4]
+                    + params[i + 5]
+                )
+                flags.append(("iv_type", iv_type))
+                i += 5
             elif params[i] in ["f"]:
-                flags.append(params[i] + params[i + 1] + params[i + 2] + params[i + 3])
+                iv_type = params[i] + params[i + 1] + params[i + 2] + params[i + 3]
+                flags.append(("iv_type", iv_type))
                 i += 3
+            elif params[i] in ["usual"]:
+                iv_type = params[i]
+                flags.append(("iv_type", iv_type))
+                i += 1
             else:
                 flags.append(params[i])
             i += 1
@@ -329,7 +360,7 @@ def main(root="./runs", draw=True, show_inclusion=True):
             batch=batch,
             flags=flags,
             results=experiment_results,
-            age_days=file_age_in_days(full_file_name)
+            age_days=file_age_in_days(full_file_name),
         )
 
         all_experiments.append(experiment)
