@@ -212,13 +212,23 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             else:
                                 return "+" if f in experiment.flags else ""
 
+                        is_best_in_subset = False
+                        
+                        if i == 0:
+                            is_best_in_subset = True
+                            for compare_model_type in MODEL_TYPE_FLAGS:
+                                if model_type != compare_model_type:
+                                    for compare_experiment in groups[dataset][split][skeleton_type][compare_model_type]:
+                                        if compare_experiment.best_result().top1 > best_result.top1:
+                                            is_best_in_subset = False
+
                         line = [
                             dataset,
                             split,
                             skeleton_type,
                             model_type,
                             experiment.network_type,
-                            str(best_result.top1) + ("#" if i == 0 else ""),
+                            str(best_result.top1) + ("#" if i == 0 else "") + ("##" if is_best_in_subset else ""),
                             best_result.top5,
                             ("" if experiment.samples is None else experiment.samples),
                             ("" if experiment.batch is None else experiment.batch),
