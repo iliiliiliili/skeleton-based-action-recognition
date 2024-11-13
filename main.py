@@ -4,6 +4,7 @@ from __future__ import print_function
 import argparse
 import inspect
 import os
+from pathlib import Path
 import pickle
 import random
 import shutil
@@ -20,6 +21,8 @@ from tensorboardX import SummaryWriter
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm import tqdm
+
+from draw import draw_uncertain_attentions
 
 
 class GradualWarmupScheduler(_LRScheduler):
@@ -230,6 +233,7 @@ def get_parser():
     parser.add_argument("--SPLIT_NAME", default=None)
     parser.add_argument("--STREAMS_NAME", default=None)
     parser.add_argument("--MODEL_NAME", default=None)
+    parser.add_argument("--draw_attention", default=False)
     return parser
 
 
@@ -755,6 +759,137 @@ class Processor:
 
         return result
 
+    def eval_and_draw(
+        self,
+        epoch,
+        save_score=False,
+        wrong_file=None,
+        result_file=None,
+        plot_folder=None,
+        runs=1,
+    ):
+        if wrong_file is not None:
+            f_w = open(wrong_file, "w")
+        if result_file is not None:
+            f_r = open(result_file, "w")
+        self.model.eval()
+        self.print_log("Eval epoch: {}".format(epoch + 1))
+
+        all_topks = {}
+
+        for r in range(runs):
+
+            self.print_log("Eval run: {}/{}".format(r + 1, runs))
+
+            ln = "test"
+            loss_value = []
+            score_frag = []
+            lbls = []
+            preds = []
+            outs = []
+            step = 0
+            process = tqdm(self.data_loader[ln])
+            for batch_idx, (data, label, index) in enumerate(process):
+                with torch.no_grad():
+                    data = Variable(
+                        data.float().cuda(self.output_device),
+                        requires_grad=False,
+                        volatile=True,
+                    )
+                    label = Variable(
+                        label.long().cuda(self.output_device),
+                        requires_grad=False,
+                        volatile=True,
+                    )
+
+                    output, output_var, attentions = self.model(data)
+                    
+                    draw_uncertain_attentions(attentions, plot_folder / f"attention_s{sample}_bi{batch_idx}.png")
+
+                    if isinstance(output, tuple):
+                        output, l1 = output
+                        l1 = l1.mean()
+                    else:
+                        l1 = 0
+                    loss = self.loss(output, label)
+                    score_frag.append(output.data.cpu().numpy())
+                    loss_value.append(loss.data.item())
+
+                    _, predict_label = torch.max(output.data, 1)
+                    step += 1
+                    lbls.append(label.data.cpu().numpy())
+                    preds.append(predict_label.data.cpu().numpy())
+                    outs.append(output.data.cpu().numpy())
+
+                if wrong_file is not None or result_file is not None:
+                    predict = list(predict_label.cpu().numpy())
+                    true = list(label.data.cpu().numpy())
+                    for i, x in enumerate(predict):
+                        if result_file is not None:
+                            f_r.write(str(x) + "," + str(true[i]) + "\n")
+                        if x != true[i] and wrong_file is not None:
+                            f_w.write(
+                                str(index[i]) + "," + str(x) + "," + str(true[i]) + "\n"
+                            )
+            score = np.concatenate(score_frag)
+            loss = np.mean(loss_value)
+            preds_val = np.concatenate(preds)
+            lbls_val = np.concatenate(lbls)
+            accuracy = np.mean((preds_val == lbls_val))
+            if accuracy > self.best_acc:
+                self.best_acc = accuracy
+                self.should_save = True
+            # self.lr_scheduler.step(loss)
+            
+            print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
+
+            for k in self.arg.show_topk:
+
+                if k not in all_topks:
+                    all_topks[k] = []
+
+                all_topks[k].append(self.data_loader[ln].dataset.top_k(score, k))
+
+        result = ""
+
+        # print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
+        if self.arg.phase == "train":
+            self.val_writer.add_scalar("loss", loss, self.global_step)
+            self.val_writer.add_scalar("loss_l1", l1, self.global_step)
+            self.val_writer.add_scalar("acc", accuracy, self.global_step)
+
+        score_dict = dict(zip(self.data_loader[ln].dataset.sample_name, score))
+        self.print_log(
+            "\tMean {} loss of {} batches: {}.".format(
+                ln, len(self.data_loader[ln]), np.mean(loss_value)
+            )
+        )
+        for k in self.arg.show_topk:
+
+            topks = all_topks[k]
+
+            topk = sum(topks) / len(topks)
+
+            self.print_log(
+                "\tTop{}: {:.2f}%".format(
+                    k, 100 * topk
+                )
+            )
+
+            result += "Top{}: {:.2f}% ".format(
+                k, 100 * topk
+            )
+
+        if save_score:
+            with open(
+                "{}/epoch{}_{}_score.pkl".format(self.arg.work_dir, epoch + 1, ln),
+                "wb",
+            ) as f:
+                pickle.dump(score_dict, f)
+
+        return result
+
+
     def prog_init(self, block_iter):
         if block_iter == 0:
             weights = torch.load(
@@ -958,14 +1093,28 @@ class Processor:
             if not self.arg.multiple:
                 self.print_log("Model:   {}.".format(self.arg.model))
                 self.print_log("Weights: {}.".format(self.arg.weights))
+            
+            plot_folder = Path("plots") / self.arg.model_saved_name
+            os.makedirs(plot_folder, exist_ok=True)
 
-            result = self.eval(
-                epoch=0,
-                save_score=self.arg.save_score,
-                wrong_file=wf,
-                result_file=rf,
-                runs=self.arg.eval_runs,
-            )
+            if self.arg.draw_attention:
+                result = self.eval_and_draw(
+                    epoch=0,
+                    save_score=self.arg.save_score,
+                    wrong_file=wf,
+                    result_file=rf,
+                    runs=self.arg.eval_runs,
+                    plot_folder=plot_folder
+                )
+            else:
+                result = self.eval(
+                    epoch=0,
+                    save_score=self.arg.save_score,
+                    wrong_file=wf,
+                    result_file=rf,
+                    runs=self.arg.eval_runs,
+                )
+
             self.arg.all_results[-1]["result"] = result
 
             if not self.arg.multiple:
@@ -1091,7 +1240,7 @@ if __name__ == "__main__":
     arg = parser.parse_args()
     arg.multiple = False
 
-    if os.path.exists(f"{arg.model_saved_name}.test.result"):
+    if os.path.exists(f"{arg.model_saved_name}.test.result") and not arg.draw_attention:
         raise Exception(
             f"Model {arg.model_saved_name} is already tested"
         )
