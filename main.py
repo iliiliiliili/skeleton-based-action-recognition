@@ -802,9 +802,11 @@ class Processor:
                         volatile=True,
                     )
 
-                    output, output_var, attentions = self.model(data)
+                    output, output_var, raw_attentions, final_attentions = self.model(data)
                     
-                    draw_uncertain_attentions(attentions, plot_folder / f"attention_s{sample}_bi{batch_idx}.png")
+                    draw_uncertain_attentions(raw_attentions, plot_folder / f"raw_attention_s{sample}_bi{batch_idx}.png", None, cmap="Greens")
+                    draw_uncertain_attentions(final_attentions, plot_folder / f"final_attention_mean_s{sample}_bi{batch_idx}.png", "mean", cmap="Oranges")
+                    draw_uncertain_attentions(final_attentions, plot_folder / f"final_attention_first_s{sample}_bi{batch_idx}.png", "first", cmap="Blues")
 
                     if isinstance(output, tuple):
                         output, l1 = output

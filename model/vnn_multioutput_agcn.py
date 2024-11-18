@@ -97,6 +97,9 @@ class GraphConvolution(nn.Module):
             A = self.A
         A = A + self.graph_attn
         hidden_ = None
+
+        all_A1s = []
+
         for i in range(self.num_subset):
             A1 = (
                 self.a_conv[i](x)
@@ -110,9 +113,11 @@ class GraphConvolution(nn.Module):
             x_a = x.view(N, C * T, V)
             z = self.g_conv[i](torch.matmul(x_a, A1).view(N, C, T, V))
             hidden_ = z + hidden_ if hidden_ is not None else z
+
+            all_A1s.append(A1)
         hidden_ = self.bn(hidden_)
         hidden_ += self.gcn_residual(x)
-        return hidden_, self.graph_attn
+        return hidden_, self.graph_attn, *all_A1s
 
 
 class VariationalGraphConvolution(MultiOutputVariationalBase):
@@ -265,13 +270,13 @@ class VariationalStgcnBlock(nn.Module):
 
     def forward(self, x):
 
-        result, attention = self.gcn(x)
+        result, raw_attention, *final_attentions = self.gcn(x)
         result = self.tcn(result)
 
         result += self.residual(x)
         result = self.relu(result)
 
-        return result, attention
+        return result, raw_attention, *final_attentions
 
 
 class VAGCN(nn.Module):
@@ -354,19 +359,22 @@ class VAGCN(nn.Module):
         )
 
         outputs = []
-        all_attentions = {}
+        all_raw_attentions = {}
+        all_final_attentions = {}
 
         for s in range(samples):
 
             current_x = x
 
             for i in range(len(self.layers)):
-                current_x, attention = self.layers["layer" + str(i + 1)](current_x)
+                current_x, raw_attention, *final_attention = self.layers["layer" + str(i + 1)](current_x)
 
-                if i not in all_attentions:
-                    all_attentions[i] = []
+                if i not in all_raw_attentions:
+                    all_raw_attentions[i] = []
+                    all_final_attentions[i] = []
                 
-                all_attentions[i].append(attention)
+                all_raw_attentions[i].append(raw_attention)
+                all_final_attentions[i].append(torch.stack(final_attention))
 
             # N*M,C,T,V
             c_new = current_x.size(1)
@@ -377,13 +385,21 @@ class VAGCN(nn.Module):
             
         result_var, result = torch.var_mean(torch.stack(outputs, dim=0), dim=0, unbiased=False)
 
-        attentions = {}
+        raw_attentions = {}
 
-        for key, values in all_attentions.items():
+        for key, values in all_raw_attentions.items():
             att_var, att = torch.var_mean(
                 torch.stack(values, dim=0), dim=0, unbiased=False
             )
-            attentions[key] = (att, att_var)
+            raw_attentions[key] = (att, att_var)
+
+        final_attentions = {}
+
+        for key, values in all_final_attentions.items():
+            att_var, att = torch.var_mean(
+                torch.stack(values, dim=0), dim=0, unbiased=False
+            )
+            final_attentions[key] = (att, att_var)
 
 
-        return result, result_var, attentions
+        return result, result_var, raw_attentions, final_attentions
