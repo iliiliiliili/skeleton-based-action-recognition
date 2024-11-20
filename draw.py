@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 
 def draw_uncertain_attentions(attentions: dict, path: str, aggregation=None, cmap="Greens", names=["Identity", "Inward", "Outward"]):
     
+    print(f"Drawing {path}")
+
     figure, axarr = plt.subplots(
         len(attentions.items()),
         2 * 3,
@@ -44,5 +46,3 @@ def draw_uncertain_attentions(attentions: dict, path: str, aggregation=None, cma
             cbar = figure.colorbar(cax, orientation='horizontal')
 
     figure.savefig(path)
-
-    print()

@@ -237,6 +237,20 @@ def get_parser():
     return parser
 
 
+def take_by_id_from_dict_of_attentions(dict, index):
+
+    result = {}
+
+    for key, values in dict.items():
+
+        result[key] = (
+            values[0][:, index, :, :],
+            values[1][:, index, :, :],
+        )
+
+    return result
+
+
 class Processor:
     """
     Processor for Skeleton-based Action Recgnition
@@ -403,7 +417,6 @@ class Processor:
                     print("  " + d)
                 state.update(weights)
                 self.model.load_state_dict(state)
-
 
         if type(self.arg.device) is list:
             if len(self.arg.device) > 1:
@@ -710,7 +723,7 @@ class Processor:
                 self.best_acc = accuracy
                 self.should_save = True
             # self.lr_scheduler.step(loss)
-            
+
             print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
 
             for k in self.arg.show_topk:
@@ -740,15 +753,9 @@ class Processor:
 
             topk = sum(topks) / len(topks)
 
-            self.print_log(
-                "\tTop{}: {:.2f}%".format(
-                    k, 100 * topk
-                )
-            )
+            self.print_log("\tTop{}: {:.2f}%".format(k, 100 * topk))
 
-            result += "Top{}: {:.2f}% ".format(
-                k, 100 * topk
-            )
+            result += "Top{}: {:.2f}% ".format(k, 100 * topk)
 
         if save_score:
             with open(
@@ -759,7 +766,7 @@ class Processor:
 
         return result
 
-    def eval_and_draw(
+    def eval_and_draw_attentions(
         self,
         epoch,
         save_score=False,
@@ -767,6 +774,7 @@ class Processor:
         result_file=None,
         plot_folder=None,
         runs=1,
+        final_attention_depends_on_batch=True,
     ):
         if wrong_file is not None:
             f_w = open(wrong_file, "w")
@@ -789,6 +797,12 @@ class Processor:
             outs = []
             step = 0
             process = tqdm(self.data_loader[ln])
+
+            outputs_by_label = {}
+            output_vars_by_label = {}
+            raw_attentions_by_label = {}
+            final_attentions_by_label = {}
+
             for batch_idx, (data, label, index) in enumerate(process):
                 with torch.no_grad():
                     data = Variable(
@@ -802,11 +816,35 @@ class Processor:
                         volatile=True,
                     )
 
-                    output, output_var, raw_attentions, final_attentions = self.model(data)
-                    
-                    draw_uncertain_attentions(raw_attentions, plot_folder / f"raw_attention_s{sample}_bi{batch_idx}.png", None, cmap="Greens")
-                    draw_uncertain_attentions(final_attentions, plot_folder / f"final_attention_mean_s{sample}_bi{batch_idx}.png", "mean", cmap="Oranges")
-                    draw_uncertain_attentions(final_attentions, plot_folder / f"final_attention_first_s{sample}_bi{batch_idx}.png", "first", cmap="Blues")
+                    output, output_var, raw_attentions, final_attentions = self.model(
+                        data
+                    )
+
+                    for i, (l, out, out_var) in enumerate(
+                        zip(
+                            label.cpu().numpy(),
+                            output,
+                            output_var,
+                        )
+                    ):
+
+                        if l not in outputs_by_label:
+                            outputs_by_label[l] = []
+                            output_vars_by_label[l] = []
+                            raw_attentions_by_label[l] = raw_attentions
+
+                            if final_attention_depends_on_batch:
+                                final_attentions_by_label[l] = []
+                            else:
+                                final_attentions_by_label[l] = final_attentions
+
+                        outputs_by_label[l].append(out)
+                        output_vars_by_label[l].append(out_var)
+
+                        if final_attention_depends_on_batch:
+                            final_attentions_by_label[l].append(
+                                take_by_id_from_dict_of_attentions(final_attentions, i)
+                            )
 
                     if isinstance(output, tuple):
                         output, l1 = output
@@ -823,6 +861,10 @@ class Processor:
                     preds.append(predict_label.data.cpu().numpy())
                     outs.append(output.data.cpu().numpy())
 
+                    if step > 1:
+                        print("STEP BREAK")
+                        break
+
                 if wrong_file is not None or result_file is not None:
                     predict = list(predict_label.cpu().numpy())
                     true = list(label.data.cpu().numpy())
@@ -833,6 +875,77 @@ class Processor:
                             f_w.write(
                                 str(index[i]) + "," + str(x) + "," + str(true[i]) + "\n"
                             )
+
+            for l, raw_attentions in raw_attentions_by_label.items():
+
+                if len(raw_attentions) > 0:
+                    draw_uncertain_attentions(
+                        raw_attentions,
+                        plot_folder / f"raw_attention_s{sample}.png",
+                        None,
+                        cmap="Greens",
+                    )
+
+                    break
+                else:
+                    print(f"Not attentions for label {l}")
+
+            if final_attention_depends_on_batch:
+
+                for l, final_attentions in final_attentions_by_label.items():
+
+                    attentions = {}
+
+                    for att in final_attentions:
+                        for key, value in att.items():
+
+                            if key not in attentions:
+                                attentions[key] = []
+
+                            attentions[key].append(value)
+
+                    for key, value in attentions.items():
+
+                        atts = [a[0] for a in value]
+                        att_vars = [a[1] for a in value]
+
+                        attentions[key] = (
+                            torch.stack(atts).transpose(1, 0),
+                            torch.stack(att_vars).transpose(1, 0),
+                        )
+
+                    if len(attentions) > 0:
+                        draw_uncertain_attentions(
+                            attentions,
+                            plot_folder
+                            / f"label_{l}_final_attention_mean_s{sample}.png",
+                            "mean",
+                            cmap="Oranges",
+                        )
+                        draw_uncertain_attentions(
+                            attentions,
+                            plot_folder
+                            / f"label_{l}_final_attention_first_s{sample}.png",
+                            "first",
+                            cmap="Blues",
+                        )
+                    else:
+                        print(f"Not attentions for label {l}")
+            else:
+                for l, final_attentions in final_attentions_by_label.items():
+
+                    if len(final_attentions) > 0:
+                        draw_uncertain_attentions(
+                            final_attentions,
+                            plot_folder / f"final_attention_s{sample}.png",
+                            None,
+                            cmap="Reds",
+                        )
+
+                        break
+                    else:
+                        print(f"Not attentions for label {l}")
+
             score = np.concatenate(score_frag)
             loss = np.mean(loss_value)
             preds_val = np.concatenate(preds)
@@ -842,7 +955,7 @@ class Processor:
                 self.best_acc = accuracy
                 self.should_save = True
             # self.lr_scheduler.step(loss)
-            
+
             print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
 
             for k in self.arg.show_topk:
@@ -872,15 +985,9 @@ class Processor:
 
             topk = sum(topks) / len(topks)
 
-            self.print_log(
-                "\tTop{}: {:.2f}%".format(
-                    k, 100 * topk
-                )
-            )
+            self.print_log("\tTop{}: {:.2f}%".format(k, 100 * topk))
 
-            result += "Top{}: {:.2f}% ".format(
-                k, 100 * topk
-            )
+            result += "Top{}: {:.2f}% ".format(k, 100 * topk)
 
         if save_score:
             with open(
@@ -890,7 +997,6 @@ class Processor:
                 pickle.dump(score_dict, f)
 
         return result
-
 
     def prog_init(self, block_iter):
         if block_iter == 0:
@@ -964,9 +1070,7 @@ class Processor:
                     #     break
                     self.train(epoch)
                     self.should_save = False
-                    self.eval(
-                        epoch, save_score=self.arg.save_score
-                    )
+                    self.eval(epoch, save_score=self.arg.save_score)
 
                     if self.should_save:
                         self.save_model(self.arg, epoch, True)
@@ -1095,18 +1199,19 @@ class Processor:
             if not self.arg.multiple:
                 self.print_log("Model:   {}.".format(self.arg.model))
                 self.print_log("Weights: {}.".format(self.arg.weights))
-            
+
             plot_folder = Path("plots") / self.arg.model_saved_name
             os.makedirs(plot_folder, exist_ok=True)
 
             if self.arg.draw_attention:
-                result = self.eval_and_draw(
+                result = self.eval_and_draw_attentions(
                     epoch=0,
                     save_score=self.arg.save_score,
                     wrong_file=wf,
                     result_file=rf,
                     runs=self.arg.eval_runs,
-                    plot_folder=plot_folder
+                    plot_folder=plot_folder,
+                    final_attention_depends_on_batch=self.arg.MODEL_NAME in ["vagcn"],
                 )
             else:
                 result = self.eval(
@@ -1243,9 +1348,7 @@ if __name__ == "__main__":
     arg.multiple = False
 
     if os.path.exists(f"{arg.model_saved_name}.test.result") and not arg.draw_attention:
-        raise Exception(
-            f"Model {arg.model_saved_name} is already tested"
-        )
+        raise Exception(f"Model {arg.model_saved_name} is already tested")
 
     if arg.phase == "train":
         init_seed(0)
