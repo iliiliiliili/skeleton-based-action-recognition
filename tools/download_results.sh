@@ -6,8 +6,8 @@ echo "cerid"
 rsync -avz --prune-empty-dirs --include "*/"  --include="*.test.result" --exclude="*" $cerid:~/har/skeleton-based-action-recognition/runs ./
 echo "scyid"
 rsync -avz --prune-empty-dirs --include "*/"  --include="*.test.result" --exclude="*" $scyid:~/har/skeleton-based-action-recognition/runs ./
-# echo "charid"
-# rsync -avz --prune-empty-dirs --include "*/"  --include="*.test.result" --exclude="*" $charid:~/har/skeleton-based-action-recognition/runs ./
+echo "charid"
+rsync -avz --prune-empty-dirs --include "*/"  --include="*.test.result" --exclude="*" $charid:~/har/skeleton-based-action-recognition/runs ./
 echo "titid"
 rsync -avz --prune-empty-dirs --include "*/"  --include="*.test.result" --exclude="*" $titid:~/har/skeleton-based-action-recognition/runs ./
 echo "cycid"
