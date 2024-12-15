@@ -8,10 +8,10 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from .variational import VariationalBase, VariationalConvolution, init_weights as vnn_init_weights
-from typing import Any, List, Optional, Literal, Tuple, Union
+from typing import Any, List, Optional, Literal, Tuple, Union, Callable
 
 
-def import_class(name):
+def import_class(name: str) -> Any:
     components = name.split(".")
     mod = __import__(components[0])
     for comp in components[1:]:
@@ -19,7 +19,7 @@ def import_class(name):
     return mod
 
 
-def weights_init(module_, bs=1):
+def weights_init(module_: nn.Module, bs: float = 1) -> None:
     if isinstance(module_, nn.Conv2d) and bs == 1:
         nn.init.kaiming_normal_(module_.weight, mode="fan_out")
         nn.init.constant_(module_.bias, 0)
@@ -46,7 +46,7 @@ def weights_init(module_, bs=1):
 
 
 class GraphConvolution(nn.Module):
-    def __init__(self, in_channels, out_channels, A, cuda_):
+    def __init__(self, in_channels: int, out_channels: int, A: np.ndarray, cuda_: bool) -> None:
         super(GraphConvolution, self).__init__()
         self.cuda_ = cuda_
         self.graph_attn = nn.Parameter(torch.from_numpy(A.astype(np.float32)))
@@ -70,7 +70,7 @@ class GraphConvolution(nn.Module):
         self.bn = nn.BatchNorm2d(out_channels)
         weights_init(self.bn, bs=1e-6)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         N, C, T, V = x.size()
         if self.cuda_:
             A = self.A.cuda(x.get_device())
@@ -90,12 +90,12 @@ class GraphConvolution(nn.Module):
 class VariationalTemporalConvolution(VariationalConvolution):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel_size=9,
-        stride=1,
-        global_std_mode="none",
-    ):
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 9,
+        stride: int = 1,
+        global_std_mode: str = "none",
+    ) -> None:
         
         pad = int((kernel_size - 1) / 2)
 
@@ -118,10 +118,10 @@ class VariationalGraphConvolution(VariationalBase):
         self,
         in_channels: int,
         out_channels: int,
-        A,
-        cuda_,
-        activation_mode="mean",
-        global_std_mode="none",
+        A: np.ndarray,
+        cuda_: bool,
+        activation_mode: str = "mean",
+        global_std_mode: str = "none",
     ) -> None:
         super().__init__()
 
@@ -153,7 +153,7 @@ class VariationalGraphConvolution(VariationalBase):
             batch_norm_mode=None,
             global_std_mode=global_std_mode,
         )
-    def _init_weights(self):
+    def _init_weights(self) -> None:
 
         all_submodules = [
             lambda x: (x.g_conv[0].weight, True),
@@ -171,8 +171,15 @@ class VariationalGraphConvolution(VariationalBase):
 
 class VariationalStgcnBlock(nn.Module):
     def __init__(
-        self, in_channels, out_channels, A, cuda_=False, stride=1, residual=True, **kwargs
-    ):
+        self,
+        in_channels: int,
+        out_channels: int,
+        A: np.ndarray,
+        cuda_: bool = False,
+        stride: int = 1,
+        residual: bool = True,
+        **kwargs: Any
+    ) -> None:
         super().__init__()
 
         self.gcn = VariationalGraphConvolution(in_channels, out_channels, A, cuda_, **kwargs)
@@ -187,7 +194,7 @@ class VariationalStgcnBlock(nn.Module):
                 in_channels, out_channels, kernel_size=1, stride=stride
             )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
 
         result = self.gcn(x)
         result = self.tcn(result)
@@ -201,19 +208,19 @@ class VariationalStgcnBlock(nn.Module):
 class VStgcn(nn.Module):
     def __init__(
         self,
-        num_class=60,
-        num_point=25,
-        num_person=2,
-        graph=None,
-        graph_args=dict(),
-        in_channels=3,
-        cuda_=True,
-        FIX_GAUSSIAN=None,
-        INIT_WEIGHTS="usual",
-        samples=4,
-        test_samples=4,
-        **kwargs
-    ):
+        num_class: int = 60,
+        num_point: int = 25,
+        num_person: int = 2,
+        graph: Optional[str] = None,
+        graph_args: dict = dict(),
+        in_channels: int = 3,
+        cuda_: bool = True,
+        FIX_GAUSSIAN: Optional[float] = None,
+        INIT_WEIGHTS: str = "usual",
+        samples: int = 4,
+        test_samples: int = 4,
+        **kwargs: Any
+    ) -> None:
         super().__init__()
 
         self.default_samples = samples
@@ -256,7 +263,12 @@ class VStgcn(nn.Module):
         self.fc = nn.Linear(256, num_class)
         weights_init(self.fc, bs=num_class)
 
-    def forward(self, x, samples=None, combine_predictions=True):
+    def forward(
+        self,
+        x: torch.Tensor,
+        samples: Optional[int] = None,
+        combine_predictions: bool = True
+    ) -> torch.Tensor:
 
         if samples is None:
             if self.training:

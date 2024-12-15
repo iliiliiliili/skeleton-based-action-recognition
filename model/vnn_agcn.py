@@ -2,6 +2,7 @@
 Modified based on: https://github.com/open-mmlab/mmskeleton
 """
 
+from typing import Any, Optional, Dict, Union, List
 import math
 import numpy as np
 import torch
@@ -16,7 +17,7 @@ from .variational import (
 NUM_SUBSET = 3
 
 
-def import_class(name):
+def import_class(name: str) -> Any:
     components = name.split(".")
     mod = __import__(components[0])
     for comp in components[1:]:
@@ -24,7 +25,7 @@ def import_class(name):
     return mod
 
 
-def weights_init(module_, bs=1):
+def weights_init(module_: nn.Module, bs: float = 1) -> None:
     if isinstance(module_, nn.Conv2d) and bs == 1:
         nn.init.kaiming_normal_(module_.weight, mode="fan_out")
         nn.init.constant_(module_.bias, 0)
@@ -115,15 +116,8 @@ class GraphConvolution(nn.Module):
 
 
 class VariationalGraphConvolution(VariationalBase):
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        A,
-        cuda_,
-        activation_mode="mean",
-        global_std_mode="none",
-    ) -> None:
+    def __init__(self, in_channels: int, out_channels: int, A: np.ndarray, cuda_: bool,
+                 activation_mode: str = "mean", global_std_mode: str = "none") -> None:
         super().__init__()
 
         means = GraphConvolution(
@@ -208,14 +202,8 @@ class TemporalConvolution(nn.Module):
 
 
 class VariationalTemporalConvolution(VariationalConvolution):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel_size=9,
-        stride=1,
-        global_std_mode="none",
-    ):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 9,
+                 stride: int = 1, global_std_mode: str = "none") -> None:
 
         pad = int((kernel_size - 1) / 2)
 
@@ -234,16 +222,8 @@ class VariationalTemporalConvolution(VariationalConvolution):
 
 
 class VariationalStgcnBlock(nn.Module):
-    def __init__(
-        self,
-        in_channels,
-        out_channels,
-        A,
-        cuda_=False,
-        stride=1,
-        residual=True,
-        **kwargs
-    ):
+    def __init__(self, in_channels: int, out_channels: int, A: np.ndarray, 
+                 cuda_: bool = False, stride: int = 1, residual: bool = True, **kwargs) -> None:
         super().__init__()
 
         self.gcn = VariationalGraphConvolution(
@@ -262,7 +242,7 @@ class VariationalStgcnBlock(nn.Module):
                 in_channels, out_channels, kernel_size=1, stride=stride
             )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
 
         result = self.gcn(x)
         result = self.tcn(result)
@@ -274,20 +254,12 @@ class VariationalStgcnBlock(nn.Module):
 
 
 class VAGCN(nn.Module):
-    def __init__(
-        self,
-        num_class=60,
-        num_point=25,
-        num_person=2,
-        graph=None,
-        graph_args=dict(),
-        in_channels=3,
-        cuda_=True,
-        FIX_GAUSSIAN=None,
-        INIT_WEIGHTS="usual",
-        samples=4,
-        test_samples=4,
-    ):
+    def __init__(self, num_class: int = 60, num_point: int = 25, num_person: int = 2,
+                 graph: Optional[str] = None, graph_args: dict = dict(),
+                 in_channels: int = 3, cuda_: bool = True,
+                 FIX_GAUSSIAN: Optional[float] = None,
+                 INIT_WEIGHTS: str = "usual",
+                 samples: int = 4, test_samples: int = 4) -> None:
         super(VAGCN, self).__init__()
 
         self.default_samples = samples
@@ -332,7 +304,8 @@ class VAGCN(nn.Module):
         self.fc = nn.Linear(256, num_class)
         weights_init(self.fc, bs=num_class)
 
-    def forward(self, x, samples=None, combine_predictions=True):
+    def forward(self, x: torch.Tensor, samples: Optional[int] = None, 
+                combine_predictions: bool = True) -> torch.Tensor:
 
         if samples is None:
             if self.training:

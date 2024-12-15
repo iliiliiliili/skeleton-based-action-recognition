@@ -13,11 +13,12 @@ from .variational import (
     init_weights as vnn_init_weights,
 )
 from .vnn_agcn import VariationalGraphConvolution, VariationalTemporalConvolution, VariationalStgcnBlock
+from typing import Any, Optional, List
 
 NUM_SUBSET = 3
 
 
-def import_class(name):
+def import_class(name: str) -> Any:
     components = name.split(".")
     mod = __import__(components[0])
     for comp in components[1:]:
@@ -25,7 +26,7 @@ def import_class(name):
     return mod
 
 
-def weights_init(module_, bs=1):
+def weights_init(module_: nn.Module, bs: float = 1) -> None:
     if isinstance(module_, nn.Conv2d) and bs == 1:
         nn.init.kaiming_normal_(module_.weight, mode="fan_out")
         nn.init.constant_(module_.bias, 0)
@@ -90,7 +91,7 @@ class InternalUncertaintyGraphConvolution(nn.Module):
         self.relu = nn.ReLU()
         self.soft = nn.Softmax(-2)
 
-    def forward(self, x, x_var):
+    def forward(self, x: torch.Tensor, x_var: torch.Tensor) -> torch.Tensor:
         N, C, T, V = x.size()
         if self.cuda_:
             A = self.A.cuda(x.get_device())
@@ -145,7 +146,7 @@ class InternalUncertaintyVariationalStgcnBlock(nn.Module):
                 in_channels, out_channels, kernel_size=1, stride=stride
             )
 
-    def forward(self, x, x_var):
+    def forward(self, x: torch.Tensor, x_var: torch.Tensor) -> torch.Tensor:
 
         result = self.gcn(x, x_var)
         result = self.tcn(result)
@@ -159,19 +160,19 @@ class InternalUncertaintyVariationalStgcnBlock(nn.Module):
 class IUVAGCN(nn.Module):
     def __init__(
         self,
-        num_class=60,
-        num_point=25,
-        num_person=2,
-        graph=None,
-        graph_args=dict(),
-        in_channels=3,
-        cuda_=True,
-        FIX_GAUSSIAN=None,
-        INIT_WEIGHTS="usual",
-        samples=4,
-        test_samples=4,
-        iu_layers=[5,10],
-    ):
+        num_class: int = 60,
+        num_point: int = 25,
+        num_person: int = 2,
+        graph: Optional[str] = None,
+        graph_args: dict = dict(),
+        in_channels: int = 3,
+        cuda_: bool = True,
+        FIX_GAUSSIAN: Optional[float] = None,
+        INIT_WEIGHTS: str = "usual",
+        samples: int = 4,
+        test_samples: int = 4,
+        iu_layers: List[int] = [5,10],
+    ) -> None:
         super(IUVAGCN, self).__init__()
 
         self.default_samples = samples
@@ -225,7 +226,12 @@ class IUVAGCN(nn.Module):
         self.fc = nn.Linear(256, num_class)
         weights_init(self.fc, bs=num_class)
 
-    def forward(self, x, samples=None, combine_predictions=True):
+    def forward(
+        self, 
+        x: torch.Tensor,
+        samples: Optional[int] = None,
+        combine_predictions: bool = True
+    ) -> torch.Tensor:
 
         if samples is None:
             if self.training:

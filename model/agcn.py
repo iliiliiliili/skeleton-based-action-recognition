@@ -1,7 +1,4 @@
-"""
-Modified based on: https://github.com/open-mmlab/mmskeleton
-"""
-
+from typing import Any, Optional, Dict, Union
 import math
 import numpy as np
 import torch
@@ -9,7 +6,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 
-def import_class(name):
+def import_class(name: str) -> Any:
     components = name.split('.')
     mod = __import__(components[0])
     for comp in components[1:]:
@@ -17,7 +14,7 @@ def import_class(name):
     return mod
 
 
-def weights_init(module_, bs=1):
+def weights_init(module_: nn.Module, bs: float = 1) -> None:
     if isinstance(module_, nn.Conv2d) and bs == 1:
         nn.init.kaiming_normal_(module_.weight, mode='fan_out')
         nn.init.constant_(module_.bias, 0)
@@ -33,7 +30,7 @@ def weights_init(module_, bs=1):
 
 
 class GraphConvolution(nn.Module):
-    def __init__(self, in_channels, out_channels, A, cuda_, coff_embedding=4):
+    def __init__(self, in_channels: int, out_channels: int, A: np.ndarray, cuda_: bool, coff_embedding: int = 4) -> None:
         super(GraphConvolution, self).__init__()
         self.cuda_ = cuda_
         self.graph_attn = nn.Parameter(torch.from_numpy(A.astype(np.float32)))
@@ -68,7 +65,7 @@ class GraphConvolution(nn.Module):
         self.relu = nn.ReLU()
         self.soft = nn.Softmax(-2)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         N, C, T, V = x.size()
         if self.cuda_:
             A = self.A.cuda(x.get_device())
@@ -90,7 +87,7 @@ class GraphConvolution(nn.Module):
 
 
 class TemporalConvolution(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=9, stride=1):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int = 9, stride: int = 1) -> None:
         super(TemporalConvolution, self).__init__()
 
         pad = int((kernel_size - 1) / 2)
@@ -100,13 +97,14 @@ class TemporalConvolution(nn.Module):
         weights_init(self.t_conv, bs=1)
         weights_init(self.bn, bs=1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.bn(self.t_conv(x))
         return x
 
 
 class ST_GCN_block(nn.Module):
-    def __init__(self, in_channels, out_channels, A, cuda_=False, stride=1, residual=True):
+    def __init__(self, in_channels: int, out_channels: int, A: np.ndarray, cuda_: bool = False, 
+                 stride: int = 1, residual: bool = True) -> None:
         super(ST_GCN_block, self).__init__()
 
         self.gcn = GraphConvolution(in_channels, out_channels, A, cuda_)
@@ -119,14 +117,15 @@ class ST_GCN_block(nn.Module):
         else:
             self.residual = TemporalConvolution(in_channels, out_channels, kernel_size=1, stride=stride)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.tcn(self.gcn(x)) + self.residual(x)
         return self.relu(x)
 
 
 class AGCN(nn.Module):
-    def __init__(self, num_class=60, num_point=25, num_person=2, graph=None, graph_args=dict(), in_channels=3,
-                 cuda_=True):
+    def __init__(self, num_class: int = 60, num_point: int = 25, num_person: int = 2, 
+                 graph: Optional[str] = None, graph_args: dict = dict(), 
+                 in_channels: int = 3, cuda_: bool = True) -> None:
         super(AGCN, self).__init__()
 
         if graph is None:
@@ -155,7 +154,7 @@ class AGCN(nn.Module):
         self.fc = nn.Linear(256, num_class)
         weights_init(self.fc, bs=num_class)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         # print('data size', x.size())
         N, C, T, V, M = x.size()
         # x = x[:, :3, :, :, :]  # for mediapipe
