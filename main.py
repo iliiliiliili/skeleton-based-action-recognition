@@ -22,7 +22,7 @@ from torch.autograd import Variable
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm import tqdm
 
-from draw import draw_uncertain_attentions
+from draw import draw_uncertain_attention_matrices, draw_uncertain_attention_skeleton_video_ntu60
 
 
 class GradualWarmupScheduler(_LRScheduler):
@@ -802,6 +802,7 @@ class Processor:
             output_vars_by_label = {}
             raw_attentions_by_label = {}
             final_attentions_by_label = {}
+            inputs_by_label = {}
 
             for batch_idx, (data, label, index) in enumerate(process):
                 with torch.no_grad():
@@ -831,6 +832,7 @@ class Processor:
                         if l not in outputs_by_label:
                             outputs_by_label[l] = []
                             output_vars_by_label[l] = []
+                            inputs_by_label[l] = []
                             raw_attentions_by_label[l] = raw_attentions
 
                             if final_attention_depends_on_batch:
@@ -840,6 +842,10 @@ class Processor:
 
                         outputs_by_label[l].append(out)
                         output_vars_by_label[l].append(out_var)
+
+                        inputs_by_label[l].append(
+                            index[i]
+                        )
 
                         if final_attention_depends_on_batch:
                             final_attentions_by_label[l].append(
@@ -863,6 +869,9 @@ class Processor:
 
                     if step > 1:
                         print("STEP BREAK")
+                        print("STEP BREAK")
+                        print("STEP BREAK")
+                        print("STEP BREAK")
                         break
 
                 if wrong_file is not None or result_file is not None:
@@ -876,19 +885,25 @@ class Processor:
                                 str(index[i]) + "," + str(x) + "," + str(true[i]) + "\n"
                             )
 
-            for l, raw_attentions in raw_attentions_by_label.items():
+            # for l, raw_attentions in raw_attentions_by_label.items():
 
-                if len(raw_attentions) > 0:
-                    draw_uncertain_attentions(
-                        raw_attentions,
-                        plot_folder / f"raw_attention_s{sample}.png",
-                        None,
-                        cmap="Greens",
-                    )
+            #     if len(raw_attentions) > 0:
+            #         # draw_uncertain_attention_matrices(
+            #         #     raw_attentions,
+            #         #     plot_folder / f"raw_attention_s{sample}.png",
+            #         #     None,
+            #         #     cmap="Greens",
+            #         # )
 
-                    break
-                else:
-                    print(f"Not attentions for label {l}")
+            #         draw_uncertain_attention_skeleton_video_ntu60(
+            #             [raw_attentions],
+            #             [inputs_by_label[l][0]],
+            #             plot_folder / f"raw_attention_s{sample}",
+            #         )
+
+            #         break
+            #     else:
+            #         print(f"Not attentions for label {l}")
 
             if final_attention_depends_on_batch:
 
@@ -915,27 +930,34 @@ class Processor:
                         )
 
                     if len(attentions) > 0:
-                        draw_uncertain_attentions(
-                            attentions,
-                            plot_folder
-                            / f"label_{l}_final_attention_mean_s{sample}.png",
-                            "mean",
-                            cmap="Oranges",
+                        # draw_uncertain_attention_matrices(
+                        #     attentions,
+                        #     plot_folder
+                        #     / f"label_{l}_final_attention_mean_s{sample}.png",
+                        #     "mean",
+                        #     cmap="Oranges",
+                        # )
+                        # draw_uncertain_attention_matrices(
+                        #     attentions,
+                        #     plot_folder
+                        #     / f"label_{l}_final_attention_first_s{sample}.png",
+                        #     "first",
+                        #     cmap="Blues",
+                        # )
+                        
+                        draw_uncertain_attention_skeleton_video_ntu60(
+                            final_attentions,
+                            inputs_by_label[l],
+                            plot_folder / f"label_{l}_final_attention_s{sample}",
                         )
-                        draw_uncertain_attentions(
-                            attentions,
-                            plot_folder
-                            / f"label_{l}_final_attention_first_s{sample}.png",
-                            "first",
-                            cmap="Blues",
-                        )
+
                     else:
                         print(f"Not attentions for label {l}")
             else:
                 for l, final_attentions in final_attentions_by_label.items():
 
                     if len(final_attentions) > 0:
-                        draw_uncertain_attentions(
+                        draw_uncertain_attention_matrices(
                             final_attentions,
                             plot_folder / f"final_attention_s{sample}.png",
                             None,

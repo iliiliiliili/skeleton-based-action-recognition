@@ -1,3 +1,4 @@
+from pathlib import Path
 from fire import Fire
 import os
 import re
@@ -13,6 +14,7 @@ from plotnine import (
     facet_wrap,
     scale_y_continuous,
     scale_x_continuous,
+    scale_y_discrete,
     geom_hline,
     position_dodge,
     geom_errorbar,
@@ -22,8 +24,10 @@ from plotnine import (
     xlab,
     scale_color_discrete,
     labeller,
+    geom_text,
 )
 from tabulate import tabulate, SEPARATING_LINE
+from pandas import Categorical, DataFrame
 import datetime
 import simple_colors as colors
 
@@ -36,6 +40,14 @@ DATASET_SPLIT_FLAGS = {
 }
 SKELETON_TYPE_FLAGS = ["joint", "joint_bone"]
 MODEL_TYPE_FLAGS = ["baselines", "vnn"]
+
+def transform_model_type_for_plotting(model_type, network):
+    if model_type in ["baselines"]:
+        return model_type
+    if model_type in ["vnn"]:
+        return network
+
+    return model_type
 
 
 @dataclass
@@ -118,7 +130,12 @@ def group_experiments(experiments: List[Experiment]):
     return result
 
 
-def show_inclusion_table(experiments: List[Experiment], show_empty=True):
+def show_inclusion_table(
+    experiments: List[Experiment],
+    data_frame_limit_by_network=1,
+    model_type_order=[],
+    show_empty=True,
+):
 
     extra_flags = set()
     value_flags = set()
@@ -158,6 +175,16 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
     table = []
     raw_table = []
 
+    data_frame = {
+        "dataset": [],
+        "split": [],
+        "skeleton": [],
+        "Model Type": [],
+        "Network": [],
+        "Top-1 Accuracy": [],
+        "Top-1 Accuracy Text": [],
+    }
+
     def colored_line(color, line):
 
         if color is None:
@@ -188,6 +215,9 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
     for dataset in DATASET_FLAGS:
         for split in DATASET_SPLIT_FLAGS[dataset]:
             for skeleton_type in SKELETON_TYPE_FLAGS:
+
+                network_count_in_data_frame = {}
+
                 for model_type in MODEL_TYPE_FLAGS:
 
                     experiments_exist = False
@@ -213,13 +243,18 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                                 return "+" if f in experiment.flags else ""
 
                         is_best_in_subset = False
-                        
+
                         if i == 0:
                             is_best_in_subset = True
                             for compare_model_type in MODEL_TYPE_FLAGS:
                                 if model_type != compare_model_type:
-                                    for compare_experiment in groups[dataset][split][skeleton_type][compare_model_type]:
-                                        if compare_experiment.best_result().top1 > best_result.top1:
+                                    for compare_experiment in groups[dataset][split][
+                                        skeleton_type
+                                    ][compare_model_type]:
+                                        if (
+                                            compare_experiment.best_result().top1
+                                            > best_result.top1
+                                        ):
                                             is_best_in_subset = False
 
                         line = [
@@ -228,7 +263,9 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                             skeleton_type,
                             model_type,
                             experiment.network_type,
-                            str(best_result.top1) + ("#" if i == 0 else "") + ("##" if is_best_in_subset else ""),
+                            str(best_result.top1)
+                            + ("#" if i == 0 else "")
+                            + ("##" if is_best_in_subset else ""),
                             best_result.top5,
                             ("" if experiment.samples is None else experiment.samples),
                             ("" if experiment.batch is None else experiment.batch),
@@ -237,6 +274,31 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
                         ]
                         table.append(colored_line(experiment_color(experiment), line))
                         raw_table.append(line)
+
+                        network_type = (
+                            "i" if "iv" in experiment.flags and experiment.network_type[0] != "i" else ""
+                        ) + experiment.network_type
+
+                        transformed_model_type = transform_model_type_for_plotting(model_type, network_type)
+
+                        if network_type not in network_count_in_data_frame:
+                            network_count_in_data_frame[network_type] = 0
+
+                        if (
+                            network_count_in_data_frame[network_type]
+                            < data_frame_limit_by_network
+                            and transformed_model_type in model_type_order
+                        ):
+
+                            network_count_in_data_frame[network_type] += 1
+
+                            data_frame["dataset"].append(dataset)
+                            data_frame["split"].append(split)
+                            data_frame["skeleton"].append(skeleton_type)
+                            data_frame["Model Type"].append(transformed_model_type)
+                            data_frame["Network"].append(network_type)
+                            data_frame["Top-1 Accuracy"].append(best_result.top1)
+                            data_frame["Top-1 Accuracy Text"].append("" if network_type == "stgcn" else best_result.top1)
 
                     if (not experiments_exist) and show_empty:
 
@@ -273,12 +335,38 @@ def show_inclusion_table(experiments: List[Experiment], show_empty=True):
     with open("inclusion_table.txt", "w") as f:
         print(raw_tab, file=f)
 
+    data_frame = DataFrame(data_frame)
 
-def draw_experiments(experiments: List[Experiment]):
-    pass
+    return data_frame
 
 
-def main(root="./runs", draw=True, show_inclusion=True):
+def draw_experiments(frame, output_file_name, model_type_order):
+    plot = (
+        ggplot(frame)
+        + aes(x="Top-1 Accuracy", y="Model Type")
+        + facet_wrap(["dataset", "split", "skeleton"], ncol=2)
+        + geom_point(
+            aes(color="Network"),
+            size=1,
+            # position=position_dodge(width=0.8),
+            # stroke=0.2,
+        )
+        + geom_text(
+            aes(x="Top-1 Accuracy", y="Model Type", label="Top-1 Accuracy Text"),
+            size=6,
+            ha='right',
+            nudge_x=-5
+        )
+        + scale_y_discrete(limits=model_type_order)
+        # + scale_x_continuous(limits=(30, 97))
+    )
+
+    plot = plot + theme(figure_size=(4, 8), strip_text_x=element_text(size=5))
+
+    plot.save(str(output_file_name), dpi=600)
+
+
+def main(root="./runs", plots_folder="plots", draw=True):
     subdirs = os.walk(root)
 
     all_result_files = []
@@ -378,11 +466,14 @@ def main(root="./runs", draw=True, show_inclusion=True):
     for exp in all_experiments:
         print(exp)
 
-    if show_inclusion:
-        show_inclusion_table(all_experiments)
+    model_type_order = ["ivagcn", "vagcn", "ivstgcn", "vstgcn", "baselines"]
+
+    data_frame = show_inclusion_table(all_experiments, model_type_order=model_type_order)
 
     if draw:
-        draw_experiments(all_experiments)
+        draw_experiments(
+            data_frame, Path(plots_folder) / "har-results.png", model_type_order
+        )
 
 
 if __name__ == "__main__":
