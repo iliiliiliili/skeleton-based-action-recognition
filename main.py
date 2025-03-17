@@ -221,6 +221,7 @@ def get_parser():
         default=1,
         help="How many times to run evaluation for the same model",
     )
+    parser.add_argument("--vnn_eval_runs", default=5, type=int)
     parser.add_argument("--only_train_part", default=False)
     parser.add_argument("--only_train_epoch", default=0)
     parser.add_argument("--warm_up_epoch", default=0)
@@ -234,6 +235,7 @@ def get_parser():
     parser.add_argument("--STREAMS_NAME", default=None)
     parser.add_argument("--MODEL_NAME", default=None)
     parser.add_argument("--draw_attention", default=False)
+    parser.add_argument("--ignore_results", default=False)
     return parser
 
 
@@ -1369,7 +1371,7 @@ if __name__ == "__main__":
     arg = parser.parse_args()
     arg.multiple = False
 
-    if os.path.exists(f"{arg.model_saved_name}.test.result") and not arg.draw_attention:
+    if os.path.exists(f"{arg.model_saved_name}.test.result") and not arg.draw_attention and not arg.ignore_results:
         raise Exception(f"Model {arg.model_saved_name} is already tested")
 
     if arg.phase == "train":
@@ -1406,7 +1408,7 @@ if __name__ == "__main__":
 
             for sample, batch_size in zip(samples, batch_sizes):
                 arg.samples = None
-                arg.eval_runs = 5
+                arg.eval_runs = arg.vnn_eval_runs
                 arg.model_args["test_samples"] = sample
                 arg.test_batch_size = batch_size
 

@@ -61,9 +61,7 @@ class GraphConvolution(nn.Module):
         inter_channels = out_channels // coff_embedding
         self.inter_c = inter_channels
         nn.init.constant_(self.graph_attn, 1e-6)
-        self.A = Variable(
-            torch.from_numpy(A.astype(np.float32)), requires_grad=False
-        )
+        self.A = Variable(torch.from_numpy(A.astype(np.float32)), requires_grad=False)
         self.num_subset = NUM_SUBSET
         self.g_conv = nn.ModuleList()
         self.a_conv = nn.ModuleList()
@@ -204,15 +202,19 @@ class VariationalGraphConvolution(MultiOutputVariationalBase):
 
         all_submodules = [
             lambda x: (
-                x.gcn_residual[0].weight
-                if isinstance(x.gcn_residual, torch.nn.Sequential)
-                else None,
+                (
+                    x.gcn_residual[0].weight
+                    if isinstance(x.gcn_residual, torch.nn.Sequential)
+                    else None
+                ),
                 True,
             ),
             lambda x: (
-                x.gcn_residual[0].bias
-                if isinstance(x.gcn_residual, torch.nn.Sequential)
-                else None,
+                (
+                    x.gcn_residual[0].bias
+                    if isinstance(x.gcn_residual, torch.nn.Sequential)
+                    else None
+                ),
                 False,
             ),
         ]
@@ -236,6 +238,7 @@ class VariationalGraphConvolution(MultiOutputVariationalBase):
             return self.means[0].attention_step
 
         return self.means.attention_step
+
     def means_output_step(self):
         if isinstance(self.means, nn.Sequential):
 
@@ -249,13 +252,13 @@ class VariationalGraphConvolution(MultiOutputVariationalBase):
                 else:
                     for i in range(1, len(self.means)):
                         x = self.means[i](x)
-                
+
                 return x
 
             return run_means_output_step
-        
+
         return self.means.output_step
-    
+
     def stds_output_step(self):
         if isinstance(self.stds, nn.Sequential):
 
@@ -269,18 +272,18 @@ class VariationalGraphConvolution(MultiOutputVariationalBase):
                 else:
                     for i in range(1, len(self.stds)):
                         x = self.stds[i](x)
-                
+
                 return x
 
             return run_stds_output_step
-        
+
         return self.stds.output_step
 
     def stds_attention_step(self):
         if isinstance(self.stds, nn.Sequential):
-            
+
             return self.stds[0].attention_step
-        
+
         return self.stds.attention_step if self.stds else None
 
     def attention_step(self, input):
@@ -303,14 +306,18 @@ class VariationalGraphConvolution(MultiOutputVariationalBase):
 
     def output_step(self, input):
         return self.means_output_step()(input)
-    
+
     def variational_output_step(self, input):
 
         means = self.means_output_step()(input[0])
         stds = self.stds_output_step()(input[1])
 
         return multi_output_variational_gaussian_sample(
-            means, stds, self.global_std_mode, VariationalBase.GLOBAL_STD, VariationalBase.FIX_GAUSSIAN
+            means,
+            stds,
+            self.global_std_mode,
+            VariationalBase.GLOBAL_STD,
+            VariationalBase.FIX_GAUSSIAN,
         )
 
     def all_steps(self, input):
@@ -325,7 +332,6 @@ class VariationalGraphConvolution(MultiOutputVariationalBase):
             self.end_batch_norm,
             self.end_activation,
         )
-
 
 
 class TemporalConvolution(nn.Module):
@@ -384,7 +390,7 @@ class VariationalStgcnBlock(nn.Module):
         cuda_=False,
         stride=1,
         residual=True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
 
@@ -413,24 +419,24 @@ class VariationalStgcnBlock(nn.Module):
         result = self.relu(result)
 
         return result, raw_attention, *final_attentions
-    
 
     def attention_step(self, x):
 
         return self.gcn.attention_step(x)
 
     def output_step(self, input):
-        
+
         (x, final_attention) = input
-        result, raw_attention, *final_attentions = self.gcn.output_step((x, final_attention))
-        
+        result, raw_attention, *final_attentions = self.gcn.output_step(
+            (x, final_attention)
+        )
+
         result = self.tcn(result)
 
         result += self.residual(x)
         result = self.relu(result)
 
         return result, raw_attention, *final_attentions
-    
 
 
 class VAGCN(nn.Module):
@@ -521,12 +527,14 @@ class VAGCN(nn.Module):
             current_x = x
 
             for i in range(len(self.layers)):
-                current_x, raw_attention, *final_attention = self.layers["layer" + str(i + 1)](current_x)
+                current_x, raw_attention, *final_attention = self.layers[
+                    "layer" + str(i + 1)
+                ](current_x)
 
                 if i not in all_raw_attentions:
                     all_raw_attentions[i] = []
                     all_final_attentions[i] = []
-                
+
                 all_raw_attentions[i].append(raw_attention)
                 all_final_attentions[i].append(torch.stack(final_attention))
 
@@ -536,8 +544,10 @@ class VAGCN(nn.Module):
             current_x = current_x.mean(3).mean(1)
             current_x = self.fc(current_x)
             outputs.append(current_x)
-            
-        result_var, result = torch.var_mean(torch.stack(outputs, dim=0), dim=0, unbiased=False)
+
+        result_var, result = torch.var_mean(
+            torch.stack(outputs, dim=0), dim=0, unbiased=False
+        )
 
         raw_attentions = {}
 
@@ -555,7 +565,6 @@ class VAGCN(nn.Module):
             )
             final_attentions[key] = (att, att_var)
 
-
         return result, result_var, raw_attentions, final_attentions
 
 
@@ -568,6 +577,7 @@ def filter_attentions(att, att_var, limit=0.5, filtered_value=0.01):
         att[att_var < -limit] = filtered_value
 
     return att
+
 
 class UncertaintyAwareEarlyAttentionVAGCN(nn.Module):
     def __init__(
@@ -658,7 +668,7 @@ class UncertaintyAwareEarlyAttentionVAGCN(nn.Module):
         output_xs = []
         all_raw_attentions = {}
         all_final_attentions = {}
-        
+
         for s in range(samples):
             output_xs.append(x)
 
@@ -669,11 +679,14 @@ class UncertaintyAwareEarlyAttentionVAGCN(nn.Module):
             for s in range(samples):
 
                 current_x = input_xs.pop(0)
-                final_attention = self.layers["layer" + str(i + 1)].attention_step(current_x)
-                current_x, raw_attention, *final_attention = self.layers["layer" + str(i + 1)].output_step((current_x, final_attention))
-                
-                output_xs.append(current_x)
+                final_attention = self.layers["layer" + str(i + 1)].attention_step(
+                    current_x
+                )
+                current_x, raw_attention, *final_attention = self.layers[
+                    "layer" + str(i + 1)
+                ].output_step((current_x, final_attention))
 
+                output_xs.append(current_x)
 
         for q in range(len(output_xs)):
             current_x = output_xs[q]
@@ -683,11 +696,12 @@ class UncertaintyAwareEarlyAttentionVAGCN(nn.Module):
             current_x = current_x.mean(3).mean(1)
             current_x = self.fc(current_x)
             output_xs[q] = current_x
-            
-        result_var, result = torch.var_mean(torch.stack(output_xs, dim=0), dim=0, unbiased=False)
+
+        result_var, result = torch.var_mean(
+            torch.stack(output_xs, dim=0), dim=0, unbiased=False
+        )
 
         return result, result_var
-
 
     def forward_uncertainty_aware(self, x, samples=None, combine_predictions=True):
 
@@ -711,7 +725,7 @@ class UncertaintyAwareEarlyAttentionVAGCN(nn.Module):
 
         input_xs = []
         output_xs = []
-        
+
         for s in range(samples):
             output_xs.append(x)
 
@@ -724,26 +738,32 @@ class UncertaintyAwareEarlyAttentionVAGCN(nn.Module):
             for s in range(samples):
 
                 current_x = input_xs.pop(0)
-                final_attention = self.layers["layer" + str(i + 1)].attention_step(current_x)
+                final_attention = self.layers["layer" + str(i + 1)].attention_step(
+                    current_x
+                )
                 layer_attentions.append(final_attention)
                 layer_xs.append(current_x)
 
-            final_attention = []
+            filtered_total_attention = []
 
             for p in range(NUM_SUBSET):
                 att_var, att = torch.var_mean(
-                    torch.stack([a[p] for a in layer_attentions], dim=0), dim=0, unbiased=False
+                    torch.stack([a[p] for a in layer_attentions], dim=0),
+                    dim=0,
+                    unbiased=False,
                 )
-                attention_filtered = filter_attentions(att, att_var, self.attention_filter_limit)
-                final_attention.append(attention_filtered)
-
-
+                attention_filtered = filter_attentions(
+                    att, att_var, self.attention_filter_limit
+                )
+                filtered_total_attention.append(attention_filtered)
+            
             for s in range(samples):
 
                 current_x = layer_xs.pop(0)
-                current_x, raw_attention, *final_attention = self.layers["layer" + str(i + 1)].output_step((current_x, final_attention))
-                output_xs.append(current_x)
-
+                next_x, raw_attention, *final_attention = self.layers[
+                    "layer" + str(i + 1)
+                ].output_step((current_x, filtered_total_attention))
+                output_xs.append(next_x)
 
         for q in range(len(output_xs)):
             current_x = output_xs[q]
@@ -753,31 +773,25 @@ class UncertaintyAwareEarlyAttentionVAGCN(nn.Module):
             current_x = current_x.mean(3).mean(1)
             current_x = self.fc(current_x)
             output_xs[q] = current_x
-            
-        result_var, result = torch.var_mean(torch.stack(output_xs, dim=0), dim=0, unbiased=False)
+
+        result_var, result = torch.var_mean(
+            torch.stack(output_xs, dim=0), dim=0, unbiased=False
+        )
 
         return result, result_var
 
     def forward(self, x, samples=None, combine_predictions=True):
-        
+
         if self.training:
             if self.training_method == "variational":
-                return self.forward_variational(
-                    x, samples, combine_predictions
-                )
+                return self.forward_variational(x, samples, combine_predictions)
             elif self.training_method == "uncertainty_aware":
-                return self.forward_uncertainty_aware(
-                    x, samples, combine_predictions
-                )
+                return self.forward_uncertainty_aware(x, samples, combine_predictions)
             else:
                 raise ValueError("Invalid training method")
         else:
 
             if self.variational_mode_on_inference:
-                return self.forward_variational(
-                    x, samples, combine_predictions
-                )
+                return self.forward_variational(x, samples, combine_predictions)
             else:
-                return self.forward_uncertainty_aware(
-                    x, samples, combine_predictions
-                )
+                return self.forward_uncertainty_aware(x, samples, combine_predictions)
