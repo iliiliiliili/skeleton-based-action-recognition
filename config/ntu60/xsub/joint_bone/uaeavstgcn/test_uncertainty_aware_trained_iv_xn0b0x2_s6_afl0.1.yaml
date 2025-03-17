@@ -1,0 +1,19 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_xn0b0x2
+
+model: model.vnn_multioutput_stgcn.UncertaintyAwareEarlyAttentionSTGCN
+model_args:
+    samples: 6
+    attention_filter_limit: 0.1
+    training_method: uncertainty_aware
+    INIT_WEIGHTS: xavier_uniform_0b:stds:0.01:0.001
+
+MODEL_NAME: uaeavstgcn
+
+init_vnn_from: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/stgcn.best.pt
+
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_xn0b0x2.best.pt
+phase: test
+
+include:
+    - base
+    - /vnn

@@ -16,6 +16,7 @@ STREAM_TYPES = ["joint", "joint_bone"]
 MODEL_TYPES = ["baselines", "vnn"]
 BASELINE_MODELS = ["agcn", "stgcn"]
 VNN_MODELS = ["vagcn", "vstgcn"]
+UA_VNN_MODELS = ["uaeavagcn", "uaeavstgcn"]
 VNN_DEFAULT_TRAINING_SAMPLES = 2
 VNN_TRAINING_SAMPLES = [1, 2, 3, 4, 6, 8]
 NTU_CLASSES = [60, 120]
@@ -301,6 +302,107 @@ def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
         create_iv_configs(training_samples)
 
 
+def create_uavnn_agcn_stgcn_configs(path, model_name, dataset):
+
+    os.makedirs(str(path), exist_ok=True)
+
+    model = {
+        "uaeavagcn": "model.vnn_multioutput_agcn.UncertaintyAwareEarlyAttentionVAGCN",
+        "uaeavstgcn": "model.vnn_multioutput_stgcn.UncertaintyAwareEarlyAttentionSTGCN",
+    }[model_name]
+
+    baseline_model_name = {
+        "uaeavagcn": "agcn",
+        "uaeavstgcn": "stgcn",
+    }[model_name]
+
+    base_params = lambda samples, name_suffix="", model_params=[]: lambda attention_filter_limit=None, training_method=None: [
+        [
+            "work_dir",
+            f"./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE{name_suffix}",
+        ],
+        [],
+        ["model", model],
+        [
+            "model_args",
+            [
+                ["samples", samples],
+                *([["attention_filter_limit", attention_filter_limit]] if attention_filter_limit is not None else []),
+                *([["training_method", training_method]] if training_method is not None else []),
+                *model_params,
+            ],
+        ],
+        [],
+        ["MODEL_NAME", model_name],
+        [],
+    ]
+
+    includes = (["include", [["- base"], ["- /vnn"]]],)
+    includes_longer = (["include", [[f"- /{dataset}/longer"], ["- base"], ["- /vnn"]]],)
+
+    attention_filter_limits = [0.1, 0.2, 0.5, 0.7, 1.0]
+
+    def create_train_test(
+        name_suffix,
+        params,
+        local_includes=includes,
+        model_name_suffix=None,
+        weights=lambda model_name_suffix: f"./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE{model_name_suffix}.best.pt",
+    ):
+        
+        for training_method in ["variational", "uncertainty_aware"]:
+            create_yaml(
+                [
+                    *params(None, training_method),
+                    *local_includes,
+                ],
+                path / f"train_{training_method}{name_suffix}.yaml",
+            )
+
+            for afl in attention_filter_limits:
+                create_yaml(
+                    [
+                        *params(afl, training_method),
+                        ["weights", weights(name_suffix if model_name_suffix is None else model_name_suffix)],
+                        ["phase", "test"],
+                        [],
+                        *includes,
+                    ],
+                    path / f"test_{training_method}_trained{name_suffix}_afl{afl}.yaml",
+                )
+
+    create_train_test("", base_params(VNN_DEFAULT_TRAINING_SAMPLES))
+
+    def create_iv_configs(training_samples):
+
+        for init_vnn_name, init_vnn_weights in [
+            ("usual", "usual"),
+            ("f0x3", "fill:stds:0.001:0.001"),
+            ("f0x4", "fill:stds:0.0001:0.0001"),
+            ("xu0b0x2", "xavier_uniform0b:stds:0.01:0.001"),
+            ("xufb0x2", "xavier_uniform_fb:stds:0.01:0.001"),
+            ("xnfb0x2", "xavier_normal_fb:stds:0.01:0.001"),
+            ("xn0b0x2", "xavier_uniform_0b:stds:0.01:0.001"),
+        ]:
+
+            create_train_test(
+                f"_iv_{init_vnn_name}_s{training_samples}",
+                lambda afl, training_method: [
+                    *base_params(training_samples, f"_iv_{init_vnn_name}", [
+                        ["INIT_WEIGHTS", init_vnn_weights]
+                    ])(afl, training_method),
+                    ["init_vnn_from", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/{baseline_model_name}.best.pt"],
+                    [],
+                ],
+                model_name_suffix=f"_iv_{init_vnn_name}",
+            )
+
+
+    for training_samples in VNN_TRAINING_SAMPLES:
+        create_train_test(f"_s{training_samples}", base_params(training_samples))
+        create_iv_configs(training_samples)
+
+
 def create_kinetics_configs(path):
 
     os.makedirs(str(path), exist_ok=True)
@@ -408,6 +510,9 @@ def create_kinetics_configs(path):
 
         for model_name in VNN_MODELS:
             create_vnn_agcn_stgcn_configs(stream_path / model_name, model_name, f"kinetics")
+
+        for model_name in UA_VNN_MODELS:
+            create_uavnn_agcn_stgcn_configs(stream_path / model_name, model_name, f"kinetics")
 
     print("Created kinetics configs")
 
@@ -532,6 +637,9 @@ def create_ntu_configs(path, classes_count):
 
             for model_name in VNN_MODELS:
                 create_vnn_agcn_stgcn_configs(stream_path / model_name, model_name, f"ntu{classes_count}")
+                
+            for model_name in UA_VNN_MODELS:
+                create_uavnn_agcn_stgcn_configs(stream_path / model_name, model_name, f"ntu{classes_count}")
 
     print(f"Created ntu{classes_count} configs")
 
