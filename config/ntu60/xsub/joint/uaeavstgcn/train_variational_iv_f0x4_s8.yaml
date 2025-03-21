@@ -1,4 +1,4 @@
-work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_f0x4
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_f0x4_variational_trained
 
 model: model.vnn_multioutput_stgcn.UncertaintyAwareEarlyAttentionSTGCN
 model_args:

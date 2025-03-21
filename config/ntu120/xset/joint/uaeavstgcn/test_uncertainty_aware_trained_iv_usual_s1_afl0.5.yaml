@@ -1,4 +1,4 @@
-work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_usual
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_usual_uncertainty_aware_trained_afl0.5
 
 model: model.vnn_multioutput_stgcn.UncertaintyAwareEarlyAttentionSTGCN
 model_args:
@@ -11,7 +11,7 @@ MODEL_NAME: uaeavstgcn
 
 init_vnn_from: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/stgcn.best.pt
 
-weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_usual.best.pt
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_usual_uncertainty_aware_trained.best.pt
 phase: test
 
 include:
