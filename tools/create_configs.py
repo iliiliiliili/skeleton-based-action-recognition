@@ -319,7 +319,8 @@ def create_uavnn_agcn_stgcn_configs(path, model_name, dataset):
     base_params = lambda samples, name_suffix="", model_params=[]: lambda attention_filter_limit=None, training_method=None: [
         [
             "work_dir",
-            f"./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE{name_suffix}",
+            f"./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE{name_suffix}_{training_method}_trained"
+            + (f"_afl{attention_filter_limit}" if attention_filter_limit is not None else ""),  
         ],
         [],
         ["model", model],
@@ -363,7 +364,7 @@ def create_uavnn_agcn_stgcn_configs(path, model_name, dataset):
                 create_yaml(
                     [
                         *params(afl, training_method),
-                        ["weights", weights(name_suffix if model_name_suffix is None else model_name_suffix)],
+                        ["weights", weights((name_suffix if model_name_suffix is None else model_name_suffix) + "_" + training_method + "_trained")],
                         ["phase", "test"],
                         [],
                         *includes,
