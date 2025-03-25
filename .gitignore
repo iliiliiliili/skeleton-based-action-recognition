@@ -1,5 +1,5 @@
 # Created by .ignore support plugin (hsz.mobi)
-# .vscode
+.vscode
 .idea/
 runs/
 old_runs/
