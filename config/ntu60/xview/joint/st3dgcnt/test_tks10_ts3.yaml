@@ -1,4 +1,4 @@
-work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks10
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks10_ts3
 
 model: model.st3dgcnt.ST3DGCNT
 
