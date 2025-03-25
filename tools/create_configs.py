@@ -15,7 +15,7 @@ DATASET_SPLITS = {
 STREAM_TYPES = ["joint", "joint_bone"]
 MODEL_TYPES = ["baselines", "vnn"]
 BASELINE_MODELS = ["agcn", "stgcn"]
-ST3D_MODELS = ["st3dgcn", "st3dgcnt"]
+ST3D_MODELS = ["st3dgcn", "st3dgcnt", "a3dgcn"]
 VNN_MODELS = ["vagcn", "vstgcn"]
 UA_VNN_MODELS = ["uaeavagcn", "uaeavstgcn"]
 VNN_DEFAULT_TRAINING_SAMPLES = 2
@@ -177,6 +177,7 @@ def create_st3d_configs(path, model_name):
     model = {
         "st3dgcn": "model.st3dgcn.ST3DGCN",
         "st3dgcnt": "model.st3dgcnt.ST3DGCNT",
+        "a3dgcn": "model.a3dgcn.A3DGCN",
     }[model_name]
 
     base_params = lambda temporal_kernel_size, temporal_stride=1: [

@@ -160,7 +160,7 @@ class ST3DGCNT(nn.Module):
              'layer2': ST_3DGCNT_block(64, 128, A, cuda_, temporal_kernel_size=temporal_kernel_size, temporal_stride=temporal_stride, temporal_padding=temporal_padding),
              'layer3': ST_3DGCNT_block(128, 256, A, cuda_, temporal_kernel_size=temporal_kernel_size, temporal_stride=temporal_stride, temporal_padding=temporal_padding)}
         )
-        
+
         self.fc = nn.Linear(256, num_class)
         weights_init(self.fc, bs=num_class)
 

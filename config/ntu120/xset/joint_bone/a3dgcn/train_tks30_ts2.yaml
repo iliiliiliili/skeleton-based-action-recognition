@@ -1,0 +1,11 @@
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks30_ts2
+
+model: model.a3dgcn.A3DGCN
+
+MODEL_NAME: a3dgcn
+
+model_args:
+    temporal_kernel_size: 30
+    temporal_stride: 2
+include:
+    - base
