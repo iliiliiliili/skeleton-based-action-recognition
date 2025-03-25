@@ -8,7 +8,6 @@ from pathlib import Path
 import pickle
 import random
 import shutil
-import time
 from collections import OrderedDict
 import numpy as np
 
@@ -21,6 +20,7 @@ from tensorboardX import SummaryWriter
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import _LRScheduler
 from tqdm import tqdm
+import time
 
 from draw import draw_uncertain_attention_matrices, draw_uncertain_attention_skeleton_video_ntu60
 
@@ -676,6 +676,10 @@ class Processor:
             outs = []
             step = 0
             process = tqdm(self.data_loader[ln])
+            total_time = 0
+            total_frames = 0
+            total_batches = 0
+            skip_first_k_for_fps = 3
             for batch_idx, (data, label, index) in enumerate(process):
                 with torch.no_grad():
                     data = Variable(
@@ -689,7 +693,18 @@ class Processor:
                         volatile=True,
                     )
 
+                    
+                    time_start = time.perf_counter()
+
                     output = self.model(data)
+                    
+                    time_step = time.perf_counter() - time_start
+                    if skip_first_k_for_fps > 0:
+                        skip_first_k_for_fps -= 1
+                    else:
+                        total_time += time_step
+                        total_frames += data.size(0) * data.size(2)
+                        total_batches += 1
 
                     if isinstance(output, tuple):
                         output, l1 = output
@@ -766,7 +781,10 @@ class Processor:
             ) as f:
                 pickle.dump(score_dict, f)
 
-        return result
+        bps = total_batches / total_time
+        fps = total_frames / total_time
+
+        return result, bps, fps
 
     def eval_and_draw_attentions(
         self,
@@ -1238,7 +1256,7 @@ class Processor:
                     final_attention_depends_on_batch=self.arg.MODEL_NAME in ["vagcn"],
                 )
             else:
-                result = self.eval(
+                result, bps, fps = self.eval(
                     epoch=0,
                     save_score=self.arg.save_score,
                     wrong_file=wf,
@@ -1247,6 +1265,8 @@ class Processor:
                 )
 
             self.arg.all_results[-1]["result"] = result
+            self.arg.all_results[-1]["bps"] = bps
+            self.arg.all_results[-1]["fps"] = fps
 
             if not self.arg.multiple:
                 self.print_log("Done.\n")

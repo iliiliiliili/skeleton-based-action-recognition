@@ -229,7 +229,7 @@ def create_st3d_configs(path, model_name):
         
         create_yaml(
             [
-                *base_params(temporal_kernel_size),
+                *base_params(temporal_kernel_size, temporal_stride),
                 ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_stride", temporal_stride]]],
                 ["weights", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks{temporal_kernel_size}_ts{temporal_stride}.best.pt"],
                 ["phase", "test"],

@@ -56,6 +56,8 @@ class SingleResult:
     batch: int
     top1: float
     top5: float
+    fps: float
+    bps: float
 
 
 @dataclass
@@ -167,6 +169,8 @@ def show_inclusion_table(
         "network",
         "top1 acc",
         "top5 acc",
+        "fps",
+        "bps",
         "samples",
         "batch",
         "test samples",
@@ -239,6 +243,8 @@ def show_inclusion_table(
                                 for ef in experiment.flags:
                                     if isinstance(ef, tuple) and ef[0] == f:
                                         return ef[1]
+                                
+                                return ""
                             else:
                                 return "+" if f in experiment.flags else ""
 
@@ -267,6 +273,8 @@ def show_inclusion_table(
                             + ("#" if i == 0 else "")
                             + ("##" if is_best_in_subset else ""),
                             best_result.top5,
+                            ("" if best_result.fps == -1 else f"{best_result.fps:.1f}"),
+                            ("" if best_result.bps == -1 else f"{best_result.bps:.1f}"),
                             ("" if experiment.samples is None else experiment.samples),
                             ("" if experiment.batch is None else experiment.batch),
                             ("" if best_result.samples == -1 else best_result.samples),
@@ -307,6 +315,8 @@ def show_inclusion_table(
                             split,
                             skeleton_type,
                             model_type,
+                            "",
+                            "",
                             "",
                             "",
                             "",
@@ -410,6 +420,10 @@ def main(root="./runs", plots_folder="plots", draw=True):
                 ts = int(params[i + 1])
                 flags.append(("ts", ts))
                 i += 1
+            elif params[i] == "afl":
+                afl = int(params[i + 1])
+                flags.append(("afl", ts))
+                i += 1
             elif params[i] in ["xufb", "xnfb"]:
                 iv_type = params[i] + params[i + 1] + params[i + 2] + params[i + 3]
                 flags.append(("iv_type", iv_type))
@@ -446,6 +460,8 @@ def main(root="./runs", plots_folder="plots", draw=True):
             for line in lines:
                 data = json.loads(line.replace("'", '"'))
                 top1, top5 = re.findall(r"\d+\.\d+", data["result"])
+                fps = data["fps"] if "fps" in data else -1
+                bps = data["bps"] if "fps" in data else -1
 
                 if "samples" not in data:
                     data["samples"] = -1
@@ -457,6 +473,8 @@ def main(root="./runs", plots_folder="plots", draw=True):
                     batch=data["batch"],
                     top1=float(top1),
                     top5=float(top5),
+                    fps=float(fps),
+                    bps=float(bps)
                 )
                 experiment_results.append(single_result)
 
