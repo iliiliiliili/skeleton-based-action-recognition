@@ -386,7 +386,7 @@ def main(root="./runs", plots_folder="plots", draw=True):
 
         groups = subdir.replace(root + "/", "").split("/")
         network_type, *params = re.findall(
-            r"[a-zA-Z]+|\d+", file.replace("test.result", "")
+            r"[a-zA-Z]+3dgcn[a-zA-Z]*|[a-zA-Z]+|\d+", file.replace("test.result", "")
         )
         samples = None
         batch = None
@@ -401,6 +401,14 @@ def main(root="./runs", plots_folder="plots", draw=True):
                 i += 1
             elif params[i] == "b":
                 batch = int(params[i + 1])
+                i += 1
+            elif params[i] == "tks":
+                tks = int(params[i + 1])
+                flags.append(("tks", tks))
+                i += 1
+            elif params[i] == "ts":
+                ts = int(params[i + 1])
+                flags.append(("ts", ts))
                 i += 1
             elif params[i] in ["xufb", "xnfb"]:
                 iv_type = params[i] + params[i + 1] + params[i + 2] + params[i + 3]

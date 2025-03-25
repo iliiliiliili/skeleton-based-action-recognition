@@ -15,6 +15,7 @@ DATASET_SPLITS = {
 STREAM_TYPES = ["joint", "joint_bone"]
 MODEL_TYPES = ["baselines", "vnn"]
 BASELINE_MODELS = ["agcn", "stgcn"]
+ST3D_MODELS = ["st3dgcn", "st3dgcnt"]
 VNN_MODELS = ["vagcn", "vstgcn"]
 UA_VNN_MODELS = ["uaeavagcn", "uaeavstgcn"]
 VNN_DEFAULT_TRAINING_SAMPLES = 2
@@ -167,6 +168,76 @@ def create_agcn_stgcn_configs(path, model_name):
         ],
         path / "test.yaml",
     )
+
+
+def create_st3d_configs(path, model_name):
+
+    os.makedirs(str(path), exist_ok=True)
+
+    model = {
+        "st3dgcn": "model.st3dgcn.ST3DGCN",
+        "st3dgcnt": "model.st3dgcnt.ST3DGCNT",
+    }[model_name]
+
+    base_params = lambda temporal_kernel_size, temporal_stride=1: [
+        ["work_dir", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks{temporal_kernel_size}_ts{temporal_stride}"],
+        [],
+        ["model", model],
+        [],
+        ["MODEL_NAME", model_name],
+        [],
+    ]
+
+    includes = (["include", [["- base"]]],)
+
+    for temporal_kernel_size in [3, 5, 7, 11]:
+        create_yaml(
+            [
+                *base_params(temporal_kernel_size),
+                ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_padding", (temporal_kernel_size - 1) // 2]]],
+                *includes,
+            ],
+            path / f"train_tks{temporal_kernel_size}.yaml",
+        )
+        
+        create_yaml(
+            [
+                *base_params(temporal_kernel_size),
+                ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_padding", (temporal_kernel_size - 1) // 2]]],
+                ["weights", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks{temporal_kernel_size}.best.pt"],
+                ["phase", "test"],
+                [],
+                *includes,
+            ],
+            path / f"test_tks{temporal_kernel_size}.yaml",
+        )
+
+    for temporal_kernel_size, temporal_stride in [
+        (3, 2), 
+        (5, 2),
+        (10, 2),
+        (30, 2)
+    ]:
+        create_yaml(
+            [
+                *base_params(temporal_kernel_size, temporal_stride),
+                ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_stride", temporal_stride]]],
+                *includes,
+            ],
+            path / f"train_tks{temporal_kernel_size}_ts{temporal_stride}.yaml",
+        )
+        
+        create_yaml(
+            [
+                *base_params(temporal_kernel_size),
+                ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_stride", temporal_stride]]],
+                ["weights", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks{temporal_kernel_size}_ts{temporal_stride}.best.pt"],
+                ["phase", "test"],
+                [],
+                *includes,
+            ],
+            path / f"test_tks{temporal_kernel_size}_ts{temporal_stride}.yaml",
+        )
 
 
 def create_vnn_agcn_stgcn_configs(path, model_name, dataset):
@@ -509,6 +580,9 @@ def create_kinetics_configs(path):
         for model_name in BASELINE_MODELS:
             create_agcn_stgcn_configs(stream_path / model_name, model_name)
 
+        for model_name in ST3D_MODELS:
+            create_st3d_configs(stream_path / model_name, model_name)
+
         for model_name in VNN_MODELS:
             create_vnn_agcn_stgcn_configs(stream_path / model_name, model_name, f"kinetics")
 
@@ -635,6 +709,9 @@ def create_ntu_configs(path, classes_count):
 
             for model_name in BASELINE_MODELS:
                 create_agcn_stgcn_configs(stream_path / model_name, model_name)
+                
+            for model_name in ST3D_MODELS:
+                create_st3d_configs(stream_path / model_name, model_name)
 
             for model_name in VNN_MODELS:
                 create_vnn_agcn_stgcn_configs(stream_path / model_name, model_name, f"ntu{classes_count}")
