@@ -14,7 +14,7 @@ DATASET_SPLITS = {
 }
 STREAM_TYPES = ["joint", "joint_bone"]
 MODEL_TYPES = ["baselines", "vnn"]
-BASELINE_MODELS = ["agcn", "stgcn"]
+BASELINE_MODELS = ["agcn", "stgcn", "stgcnt"]
 ST3D_MODELS = ["st3dgcn", "st3dgcnt", "a3dgcn"]
 VNN_MODELS = ["vagcn", "vstgcn"]
 UA_VNN_MODELS = ["uaeavagcn", "uaeavstgcn"]
@@ -137,6 +137,7 @@ def create_agcn_stgcn_configs(path, model_name):
     model = {
         "agcn": "model.agcn.AGCN",
         "stgcn": "model.stgcn.STGCN",
+        "stgcnt": "model.stgcnt.STGCNT",
     }[model_name]
 
     base_params = [
