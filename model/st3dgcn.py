@@ -39,6 +39,10 @@ class Graph3DConvolution(nn.Module):
         self.cuda_ = cuda_
         self.temporal_kernel_size = temporal_kernel_size
         self.temporal_stride = temporal_stride
+
+        if isinstance(temporal_padding, int):
+            temporal_padding = (self.temporal_padding, self.temporal_padding)
+
         self.temporal_padding = temporal_padding
 
         self.graph_attn = nn.Parameter(torch.from_numpy(A.astype(np.float32)))
@@ -67,7 +71,7 @@ class Graph3DConvolution(nn.Module):
     def forward(self, x):
         N, C, T, V = x.size()
 
-        temporal_patches = pad(x, (0, 0, self.temporal_padding, self.temporal_padding), "constant", 0).unfold(2, self.temporal_kernel_size, self.temporal_stride)
+        temporal_patches = pad(x, (0, 0, self.temporal_padding[0], self.temporal_padding[1]), "constant", 0).unfold(2, self.temporal_kernel_size, self.temporal_stride)
         temporal_patches_count = temporal_patches.shape[2]
         temporal_patches = temporal_patches.reshape(N, C, temporal_patches_count, -1)
         temporal_patches_squeezed = temporal_patches.view(N, C * temporal_patches_count, -1)
@@ -82,7 +86,7 @@ class Graph3DConvolution(nn.Module):
         
         hidden_ = None
         for i in range(self.num_subset):
-            z = self.g_conv[i](torch.matmul(temporal_patches_squeezed, temporal_adjacency[i]).view(N, C, temporal_patches_count, -1))
+            z = self.g_conv[i](torch.matmul(temporal_patches_squeezed, temporal_adjacency[i]).view(N, C, temporal_patches_count, -1) / self.temporal_kernel_size)
             hidden_ = z + hidden_ if hidden_ is not None else z
         hidden_ = self.bn(hidden_)
         hidden_ += self.gcn_residual(x)

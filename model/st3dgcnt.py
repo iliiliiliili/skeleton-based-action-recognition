@@ -82,7 +82,7 @@ class Graph3DConvolution(nn.Module):
         
         hidden_ = None
         for i in range(self.num_subset):
-            z = self.g_conv[i](torch.matmul(temporal_patches_squeezed, temporal_adjacency[i]).view(N, C, temporal_patches_count, -1))
+            z = self.g_conv[i](torch.matmul(temporal_patches_squeezed, temporal_adjacency[i]).view(N, C, temporal_patches_count, -1) / self.temporal_kernel_size)
             hidden_ = z + hidden_ if hidden_ is not None else z
         hidden_ = self.bn(hidden_)
         residual = self.gcn_residual(x)

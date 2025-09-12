@@ -368,7 +368,7 @@ def draw_experiments(frame, output_file_name, model_type_order):
             nudge_x=-5
         )
         + scale_y_discrete(limits=model_type_order)
-        # + scale_x_continuous(limits=(30, 97))
+        + scale_x_continuous(limits=(10, 97))
     )
 
     plot = plot + theme(figure_size=(4, 8), strip_text_x=element_text(size=5))
@@ -376,7 +376,7 @@ def draw_experiments(frame, output_file_name, model_type_order):
     plot.save(str(output_file_name), dpi=600)
 
 
-def main(root="./runs", plots_folder="plots", draw=True):
+def main(root="./runs", plots_folder="plots", exclude_network_types=[], draw=True):
     subdirs = os.walk(root)
 
     all_result_files = []
@@ -398,6 +398,11 @@ def main(root="./runs", plots_folder="plots", draw=True):
         network_type, *params = re.findall(
             r"[a-zA-Z]+3dgcn[a-zA-Z]*|[a-zA-Z]+|\d+", file.replace("test.result", "")
         )
+
+        if network_type in exclude_network_types:
+            print(f"Excluding {network_type}")
+            continue
+
         samples = None
         batch = None
         flags = []
@@ -422,7 +427,7 @@ def main(root="./runs", plots_folder="plots", draw=True):
                 i += 1
             elif params[i] == "afl":
                 afl = int(params[i + 1])
-                flags.append(("afl", ts))
+                flags.append(("afl", afl))
                 i += 1
             elif params[i] in ["xufb", "xnfb"]:
                 iv_type = params[i] + params[i + 1] + params[i + 2] + params[i + 3]

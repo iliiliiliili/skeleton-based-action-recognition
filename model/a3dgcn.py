@@ -39,6 +39,10 @@ class Graph3DConvolution(nn.Module):
         self.inter_c = inter_channels
         self.temporal_kernel_size = temporal_kernel_size
         self.temporal_stride = temporal_stride
+
+        if isinstance(temporal_padding, int):
+            temporal_padding = (self.temporal_padding, self.temporal_padding)
+
         self.temporal_padding = temporal_padding
         nn.init.constant_(self.graph_attn, 1e-6)
         self.A = Variable(torch.from_numpy(A.astype(np.float32)), requires_grad=False)
@@ -72,11 +76,11 @@ class Graph3DConvolution(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         N, C, T, V = x.size()
 
-        temporal_patches = pad(x, (0, 0, self.temporal_padding, self.temporal_padding), "constant", 0).unfold(2, self.temporal_kernel_size, self.temporal_stride)
+        temporal_patches = pad(x, (0, 0, self.temporal_padding[0], self.temporal_padding[1]), "constant", 0).unfold(2, self.temporal_kernel_size, self.temporal_stride)
         temporal_patches_count = temporal_patches.shape[2]
         temporal_patches = temporal_patches.reshape(N, C, temporal_patches_count, -1)
         temporal_patches_squeezed = temporal_patches.view(N, C * temporal_patches_count, -1)
-        
+
         if self.cuda_:
             A = self.A.cuda(x.get_device())
         else:

@@ -192,11 +192,14 @@ def create_st3d_configs(path, model_name):
 
     includes = (["include", [["- base"]]],)
 
-    for temporal_kernel_size in [3, 5, 7, 11]:
+    for temporal_kernel_size in [1, 2, 3, 4, 5, 7, 11]:
+
+        temporal_padding = temporal_kernel_size // 2 if temporal_kernel_size % 2 == 1 else [temporal_kernel_size // 2, 0]
+
         create_yaml(
             [
                 *base_params(temporal_kernel_size),
-                ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_padding", (temporal_kernel_size - 1) // 2]]],
+                ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_padding", f"{temporal_padding}"]]],
                 *includes,
             ],
             path / f"train_tks{temporal_kernel_size}.yaml",
@@ -205,7 +208,7 @@ def create_st3d_configs(path, model_name):
         create_yaml(
             [
                 *base_params(temporal_kernel_size),
-                ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_padding", (temporal_kernel_size - 1) // 2]]],
+                ["model_args", [["temporal_kernel_size", temporal_kernel_size], ["temporal_padding", f"{temporal_padding}"]]],
                 ["weights", f"./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks{temporal_kernel_size}.best.pt"],
                 ["phase", "test"],
                 [],
@@ -215,7 +218,7 @@ def create_st3d_configs(path, model_name):
         )
 
     for temporal_kernel_size, temporal_stride in [
-        (3, 2), 
+        (3, 2),
         (5, 2),
         (10, 2),
         (15, 2),
