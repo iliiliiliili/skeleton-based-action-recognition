@@ -303,4 +303,7 @@ class VStgcn(nn.Module):
         
         result_var, result = torch.var_mean(torch.stack(outputs, dim=0), dim=0, unbiased=False)
 
-        return result #, result_var
+        if combine_predictions:
+            return result
+        else:
+            return result, outputs

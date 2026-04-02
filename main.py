@@ -236,6 +236,9 @@ def get_parser():
     parser.add_argument("--MODEL_NAME", default=None)
     parser.add_argument("--draw_attention", default=False)
     parser.add_argument("--ignore_results", default=False)
+    parser.add_argument("--eval_loss", default=True)
+    parser.add_argument("--eval_var", default=False)
+    parser.add_argument("--save_for_ood", default=False)
     return parser
 
 
@@ -711,7 +714,11 @@ class Processor:
                         l1 = l1.mean()
                     else:
                         l1 = 0
-                    loss = self.loss(output, label)
+                    
+                    if self.arg.eval_loss:
+                        loss = self.loss(output, label)
+                    else:
+                        loss = torch.tensor(-1, device=output.device)
                     score_frag.append(output.data.cpu().numpy())
                     loss_value.append(loss.data.item())
 
@@ -740,6 +747,26 @@ class Processor:
                 self.best_acc = accuracy
                 self.should_save = True
             # self.lr_scheduler.step(loss)
+
+            
+            if self.arg.save_for_ood:
+
+                save_object = {
+                    "categorical_all": None,
+                    "categorical_mean": None,
+                    "categorical_var": None,
+                    "lbls_val": lbls_val,
+                    "preds_val": preds_val,
+                    "accuracy": accuracy,
+                    "score": score,
+                    "logits_sets": None,
+                }
+
+                os.makedirs("./ood_experiments", exist_ok=True)
+
+                with open(f"./ood_experiments/eval_state_baseline.pkl", "wb") as f:
+                    pickle.dump(save_object, f)
+                    print("Saved eval state to ./ood_experiments/eval_state_baseline.pkl")
 
             print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
 
@@ -785,6 +812,204 @@ class Processor:
         fps = total_frames / total_time
 
         return result, bps, fps
+
+
+    def eval_var(
+        self,
+        epoch,
+        save_score=False,
+        wrong_file=None,
+        result_file=None,
+        runs=1,
+    ):
+        if wrong_file is not None:
+            f_w = open(wrong_file, "w")
+        if result_file is not None:
+            f_r = open(result_file, "w")
+        self.model.eval()
+        self.print_log("Eval epoch: {}".format(epoch + 1))
+
+        all_topks = {}
+
+        for r in range(runs):
+
+            self.print_log("Eval run: {}/{}".format(r + 1, runs))
+
+            ln = "test"
+            loss_value = []
+            score_frag = []
+            categorical_all_frag = []
+            categorical_mean_frag = []
+            categorical_var_frag = []
+            logits_sets_all_frag = []
+            lbls = []
+            preds = []
+            outs = []
+            step = 0
+            process = tqdm(self.data_loader[ln])
+            total_time = 0
+            total_frames = 0
+            total_batches = 0
+            skip_first_k_for_fps = 3
+            for batch_idx, (data, label, index) in enumerate(process):
+                with torch.no_grad():
+                    data = Variable(
+                        data.float().cuda(self.output_device),
+                        requires_grad=False,
+                        volatile=True,
+                    )
+                    label = Variable(
+                        label.long().cuda(self.output_device),
+                        requires_grad=False,
+                        volatile=True,
+                    )
+
+                    time_start = time.perf_counter()
+
+                    output, output_list = self.model(data, combine_predictions=False)
+                    
+                    time_step = time.perf_counter() - time_start
+                    if skip_first_k_for_fps > 0:
+                        skip_first_k_for_fps -= 1
+                    else:
+                        total_time += time_step
+                        total_frames += data.size(0) * data.size(2)
+                        total_batches += 1
+
+                    if isinstance(output, tuple):
+                        output, l1 = output
+                        l1 = l1.mean()
+                    else:
+                        l1 = 0
+                    
+                    if self.arg.eval_loss:
+                        loss = self.loss(output, label)
+                    else:
+                        loss = torch.tensor(-1, device=output.device)
+                    score_frag.append(output.data.cpu().numpy())
+
+                    categorical_distributions = torch.stack([torch.softmax(output_list[i], dim=1) for i in range(len(output_list))], dim=0)
+                    categorical_var, categorical_mean = torch.var_mean(categorical_distributions, dim=0, unbiased=False)
+                    logits_set = torch.stack(output_list, dim=1)
+
+                    categorical_all_frag.append(categorical_distributions.transpose(0, 1).data.cpu().numpy())
+                    categorical_mean_frag.append(categorical_mean.data.cpu().numpy())
+                    categorical_var_frag.append(categorical_var.data.cpu().numpy())
+                    logits_sets_all_frag.append(logits_set.data.cpu().numpy())
+                    loss_value.append(loss.data.item())
+
+                    _, predict_label = torch.max(output.data, 1)
+                    step += 1
+                    lbls.append(label.data.cpu().numpy())
+                    preds.append(predict_label.data.cpu().numpy())
+                    outs.append(output.data.cpu().numpy())
+
+                if wrong_file is not None or result_file is not None:
+                    predict = list(predict_label.cpu().numpy())
+                    true = list(label.data.cpu().numpy())
+                    for i, x in enumerate(predict):
+                        if result_file is not None:
+                            f_r.write(str(x) + "," + str(true[i]) + "\n")
+                        if x != true[i] and wrong_file is not None:
+                            f_w.write(
+                                str(index[i]) + "," + str(x) + "," + str(true[i]) + "\n"
+                            )
+            score = np.concatenate(score_frag)
+            categorical_all = np.concatenate(categorical_all_frag)
+            categorical_mean = np.concatenate(categorical_mean_frag)
+            categorical_var = np.concatenate(categorical_var_frag)
+            logits_sets = np.concatenate(logits_sets_all_frag)
+            loss = np.mean(loss_value)
+            preds_val = np.concatenate(preds)
+            lbls_val = np.concatenate(lbls)
+            accuracy = np.mean((preds_val == lbls_val))
+            if accuracy > self.best_acc:
+                self.best_acc = accuracy
+                self.should_save = True
+            # self.lr_scheduler.step(loss)
+
+            if self.arg.save_for_ood:
+
+                save_object = {
+                    "categorical_all": categorical_all,
+                    "categorical_mean": categorical_mean,
+                    "categorical_var": categorical_var,
+                    "lbls_val": lbls_val,
+                    "preds_val": preds_val,
+                    "accuracy": accuracy,
+                    "score": score,
+                    "logits_sets": logits_sets,
+                }
+
+                os.makedirs("./ood_experiments", exist_ok=True)
+
+                with open(f"./ood_experiments/eval_state.pkl", "wb") as f:
+                    pickle.dump(save_object, f)
+                    print("Saved eval state to ./ood_experiments/eval_state.pkl")
+
+                # dirichlets_moments = [estimate_dirichlet_params(categorical_mean[i], categorical_var[i]) for i in range(len(categorical_mean))]
+                # dirichlets_mle = [estimate_mle_dirichlet(categorical_all[i]) for i in range(len(categorical_all))]
+
+                # dirichlets_ind = [dirichlets_mle[i] for i in range(len(categorical_mean)) if lbls_val[i] < 60]
+                # dirichlets_ood = [dirichlets_mle[i] for i in range(len(categorical_mean)) if lbls_val[i] >= 60]
+
+                # ood_variance = categorical_var[lbls_val >= 60].mean()
+                # ind_variance = categorical_var[lbls_val < 60].mean()
+
+                # print("OOD variance: ", ood_variance, " IND variance: ", ind_variance)
+                # print("OOD variance / IND variance: ", ood_variance / ind_variance)
+
+                # plot_dirichlet_list(dirichlets_ind[:36], name="dirichlets_ind")
+                # plot_dirichlet_list(dirichlets_ood[:36], name="dirichlets_ood")
+
+
+                print()
+
+            print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
+
+            for k in self.arg.show_topk:
+
+                if k not in all_topks:
+                    all_topks[k] = []
+
+                all_topks[k].append(self.data_loader[ln].dataset.top_k(score, k))
+
+        result = ""
+
+        # print("Accuracy: ", accuracy, " model: ", self.arg.model_saved_name)
+        if self.arg.phase == "train":
+            self.val_writer.add_scalar("loss", loss, self.global_step)
+            self.val_writer.add_scalar("loss_l1", l1, self.global_step)
+            self.val_writer.add_scalar("acc", accuracy, self.global_step)
+
+        score_dict = dict(zip(self.data_loader[ln].dataset.sample_name, score))
+        self.print_log(
+            "\tMean {} loss of {} batches: {}.".format(
+                ln, len(self.data_loader[ln]), np.mean(loss_value)
+            )
+        )
+        for k in self.arg.show_topk:
+
+            topks = all_topks[k]
+
+            topk = sum(topks) / len(topks)
+
+            self.print_log("\tTop{}: {:.2f}%".format(k, 100 * topk))
+
+            result += "Top{}: {:.2f}% ".format(k, 100 * topk)
+
+        if save_score:
+            with open(
+                "{}/epoch{}_{}_score.pkl".format(self.arg.work_dir, epoch + 1, ln),
+                "wb",
+            ) as f:
+                pickle.dump(score_dict, f)
+
+        bps = total_batches / total_time
+        fps = total_frames / total_time
+
+        return result, bps, fps
+
 
     def eval_and_draw_attentions(
         self,
@@ -1254,6 +1479,14 @@ class Processor:
                     runs=self.arg.eval_runs,
                     plot_folder=plot_folder,
                     final_attention_depends_on_batch=self.arg.MODEL_NAME in ["vagcn"],
+                )
+            elif self.arg.eval_var:
+                result, bps, fps = self.eval_var(
+                    epoch=0,
+                    save_score=self.arg.save_score,
+                    wrong_file=wf,
+                    result_file=rf,
+                    runs=self.arg.eval_runs,
                 )
             else:
                 result, bps, fps = self.eval(

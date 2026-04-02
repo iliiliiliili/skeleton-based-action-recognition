@@ -138,7 +138,7 @@ class STGCN(nn.Module):
              'layer9': ST_GCN_block(256, 256, A, cuda_),
              'layer10': ST_GCN_block(256, 256, A, cuda_)}
         )
-        
+
         self.fc = nn.Linear(256, num_class)
         weights_init(self.fc, bs=num_class)
 
