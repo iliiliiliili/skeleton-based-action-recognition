@@ -1,0 +1,15 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE
+
+# model
+model: model.iu_vnn_agcn.IUVAGCN
+model_args:
+  samples: 2
+  iu_layers: [5, 10]
+
+MODEL_NAME: iuvagcn
+
+include:
+  - base
+  - /vnn
+
+batch_size: 32

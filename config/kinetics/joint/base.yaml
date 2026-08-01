@@ -1,0 +1,21 @@
+feeder: feeders.feeder.Feeder
+train_feeder_args:
+    data_path: /data/sets/kinetics/train_data_joint.npy
+    label_path: /data/sets/kinetics/train_label.pkl
+    debug: False
+    random_choose: False
+    random_shift: False
+    random_move: False
+    window_size: -1
+    normalization: False
+
+test_feeder_args:
+    data_path: /data/sets/kinetics/val_data_joint.npy
+    label_path: /data/sets/kinetics/val_label.pkl
+    debug: False
+
+STREAMS_NAME: joint
+
+
+include:
+    - base

@@ -1,0 +1,31 @@
+work_dir: ./ood_runs/baselines/ntu60to120/$SPLIT/$STREAMS/$MODEL
+
+model: model.stgcn.STGCN
+
+MODEL_NAME: stgcn
+
+weights: ./runs/baselines/ntu60/$SPLIT/$STREAMS/$MODEL.best.pt
+phase: test
+
+DATASET_NAME: ntu120
+
+train_feeder_args:
+    data_path: /data/sets/ntu3d/ntu120/xsub/train_data_joint.npy
+    label_path: /data/sets/ntu3d/ntu120/xsub/train_label.pkl
+    debug: False
+    random_choose: False
+    random_shift: False
+    random_move: False
+    window_size: -1
+    normalization: False
+
+test_feeder_args:
+    data_path: /data/sets/ntu3d/ntu120/xsub/val_data_joint.npy
+    label_path: /data/sets/ntu3d/ntu120/xsub/val_label.pkl
+    debug: False
+
+eval_loss: False
+save_for_ood: True
+
+include:
+    - base

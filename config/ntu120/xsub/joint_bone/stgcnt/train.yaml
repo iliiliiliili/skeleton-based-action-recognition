@@ -1,0 +1,8 @@
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL
+
+model: model.stgcnt.STGCNT
+
+MODEL_NAME: stgcnt
+
+include:
+    - base

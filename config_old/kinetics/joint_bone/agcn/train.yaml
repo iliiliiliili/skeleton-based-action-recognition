@@ -1,0 +1,9 @@
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL
+
+# model
+model: model.agcn.AGCN
+
+MODEL_NAME: agcn
+
+include:
+  - base

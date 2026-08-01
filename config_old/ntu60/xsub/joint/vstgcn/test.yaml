@@ -1,0 +1,17 @@
+# work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLESb$BATCH_SIZE
+work_dir: ./runs/ivstgcn/xsub_ivstgcn_ntu_60_joint_e50s2
+
+# model
+model: model.vnn_stgcn.VStgcn
+model_args:
+  samples: 3
+  num_class: 120
+
+MODEL_NAME: vstgcn
+
+include:
+  - base
+  - /vnn
+
+phase: test
+weights: ./runs/ivstgcn/xsub_ivstgcn_ntu_60_joint_e50s2-49-35750.pt

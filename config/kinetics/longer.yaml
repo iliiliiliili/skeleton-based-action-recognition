@@ -1,0 +1,3 @@
+#optimization
+step: [55, 70]
+num_epoch: 80

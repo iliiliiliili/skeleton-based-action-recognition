@@ -1,0 +1,4 @@
+device: -1 # use all available GPUs
+
+nesterov: True
+end_test: True

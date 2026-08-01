@@ -1,0 +1,13 @@
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_b$BATCH_SIZE
+weights: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_b$BATCH_SIZE.best.pt
+
+# model
+model: model.agcn.AGCN
+
+MODEL_NAME: agcn
+
+include:
+  - base
+
+phase: test
+batch_size: 56

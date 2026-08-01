@@ -1,0 +1,14 @@
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks10_ts3
+
+model: model.st3dgcnt.ST3DGCNT
+
+MODEL_NAME: st3dgcnt
+
+model_args:
+    temporal_kernel_size: 10
+    temporal_stride: 3
+weights: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks10_ts3.best.pt
+phase: test
+
+include:
+    - base
