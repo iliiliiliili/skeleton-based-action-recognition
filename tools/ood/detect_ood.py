@@ -30,6 +30,21 @@ def detect_traditional_ood(ind_logits, ood_logits, table=[["Method", "FPR-95", "
         results[method] = compute_traditional_ood(ind_scores, ood_scores, method)
         table.append([method, f"{100.0 * results[method]['FPR']:.2f}", f"{100.0 * results[method]['FPR-80']:.2f}", f"{100.0 * results[method]['AUROC']:.2f}"])
 
+
+    method = "Energy + MSP"
+
+    ind_scores1 = get_score(ind_logits, "energy")
+    ood_scores1 = get_score(ood_logits, "energy")
+
+    ind_scores2 = get_score(ind_logits, "msp")
+    ood_scores2 = get_score(ood_logits, "msp")
+
+    ind_scores = ind_scores1 + ind_scores2
+    ood_scores = ood_scores1 + ood_scores2
+
+    results[method] = compute_traditional_ood(ind_scores, ood_scores, method)
+    table.append([method, f"{100.0 * results[method]['FPR']:.2f}", f"{100.0 * results[method]['FPR-80']:.2f}", f"{100.0 * results[method]['AUROC']:.2f}"])
+
     return results, table
 
 
@@ -127,7 +142,6 @@ def detect_ood(
     table.append(["Variance: Logits mean vs mean", f"{100.0 * metrics['FPR']:.2f}", f"{100.0 * metrics['FPR-80']:.2f}", f"{100.0 * metrics['AUROC']:.2f}"])
 
     best_thresholds["variance:logits-mean-vs-mean"] = [best_threshold]
-
 
 
     print("-------------------------------")
@@ -467,14 +481,25 @@ def detect_ood(
         
     metrics = cal_metric(ind_scores, ood_scores)
     print(f"Scores FPR-95: {100.0 * metrics['FPR']:.2f}, FPR-80: {100.0 * metrics['FPR-80']:.2f}, AUROC: {100.0 * metrics['AUROC']:.2f}, AUIN: {100.0 * metrics['AUIN']:.2f}")
-    table.append(["Max confidence: MLE", f"{100.0 * metrics['FPR']:.2f}", f"{100.0 * metrics['FPR-80']:.2f}", f"{100.0 * metrics['AUROC']:.2f}"])
+    table.append(["Max confidence: Moments", f"{100.0 * metrics['FPR']:.2f}", f"{100.0 * metrics['FPR-80']:.2f}", f"{100.0 * metrics['AUROC']:.2f}"])
 
     msp_ind_scores = get_score(ind_logits, "msp")
     msp_ood_scores = get_score(ood_logits, "msp")
 
+    energy_ind_scores = get_score(ind_logits, "energy")
+    energy_ood_scores = get_score(ood_logits, "energy")
+
     metrics = cal_metric(ind_scores + msp_ind_scores, ood_scores + msp_ood_scores)
     print(f"Scores+MSP FPR-95: {100.0 * metrics['FPR']:.2f}, FPR-80: {100.0 * metrics['FPR-80']:.2f}, AUROC: {100.0 * metrics['AUROC']:.2f}, AUIN: {100.0 * metrics['AUIN']:.2f}")
-    table.append(["Max confidence: MLE + MSP", f"{100.0 * metrics['FPR']:.2f}", f"{100.0 * metrics['FPR-80']:.2f}", f"{100.0 * metrics['AUROC']:.2f}"])
+    table.append(["Max confidence: Moments + MSP", f"{100.0 * metrics['FPR']:.2f}", f"{100.0 * metrics['FPR-80']:.2f}", f"{100.0 * metrics['AUROC']:.2f}"])
+
+    metrics = cal_metric(ind_scores + energy_ind_scores, ood_scores + energy_ood_scores)
+    print(f"Scores+Energy FPR-95: {100.0 * metrics['FPR']:.2f}, FPR-80: {100.0 * metrics['FPR-80']:.2f}, AUROC: {100.0 * metrics['AUROC']:.2f}, AUIN: {100.0 * metrics['AUIN']:.2f}")
+    table.append(["Max confidence: Moments + Energy", f"{100.0 * metrics['FPR']:.2f}", f"{100.0 * metrics['FPR-80']:.2f}", f"{100.0 * metrics['AUROC']:.2f}"])
+
+    metrics = cal_metric(ind_scores + energy_ind_scores + msp_ind_scores, ood_scores + energy_ood_scores + msp_ood_scores)
+    print(f"Scores+Energy+FPR-95: {100.0 * metrics['FPR']:.2f}, FPR-80: {100.0 * metrics['FPR-80']:.2f}, AUROC: {100.0 * metrics['AUROC']:.2f}, AUIN: {100.0 * metrics['AUIN']:.2f}")
+    table.append(["Max confidence: Moments + Energy + MSP", f"{100.0 * metrics['FPR']:.2f}", f"{100.0 * metrics['FPR-80']:.2f}", f"{100.0 * metrics['AUROC']:.2f}"])
 
     best_thresholds["max-confidence:Moments"] = [best_threshold]
 
