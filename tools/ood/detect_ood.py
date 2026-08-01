@@ -63,7 +63,7 @@ def detect_traditional_var_ood(ind_logits, ood_logits, ind_logits_vars, ood_logi
     return results, table
 
 
-
+# Used to create OOD table (1 in the paper)
 def detect_ood(
     ind_variances,
     ood_variances,

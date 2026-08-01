@@ -376,6 +376,7 @@ def draw_experiments(frame, output_file_name, model_type_order):
     plot.save(str(output_file_name), dpi=600)
 
 
+# Used to create results figure (3 in the paper)
 def main(root="./runs", plots_folder="plots", exclude_network_types=[], draw=True):
     subdirs = os.walk(root)
 
