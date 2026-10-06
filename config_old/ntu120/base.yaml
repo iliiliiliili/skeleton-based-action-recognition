@@ -1,0 +1,21 @@
+model_args:
+  num_class: 120
+  num_point: 25
+  num_person: 2
+  graph: graph.ntu_rgb_d.Graph
+  graph_args:
+    labeling_mode: 'spatial'
+
+#optim
+weight_decay: 0.0001
+base_lr: 0.1
+step: [30, 40]
+
+batch_size: 64
+test_batch_size: 64
+num_epoch: 120
+
+DATASET_NAME: ntu120
+
+include:
+  - base

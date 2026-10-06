@@ -1,0 +1,11 @@
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_tks50
+
+model: model.st3dgcn.ST3DGCN
+
+MODEL_NAME: st3dgcn
+
+model_args:
+    temporal_kernel_size: 50
+    temporal_padding: 24
+include:
+    - base

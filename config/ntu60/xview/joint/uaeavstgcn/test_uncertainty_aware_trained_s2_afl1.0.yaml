@@ -1,0 +1,16 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_uncertainty_aware_trained_afl1.0
+
+model: model.vnn_multioutput_stgcn.UncertaintyAwareEarlyAttentionSTGCN
+model_args:
+    samples: 2
+    attention_filter_limit: 1.0
+    training_method: uncertainty_aware
+
+MODEL_NAME: uaeavstgcn
+
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_s2_uncertainty_aware_trained.best.pt
+phase: test
+
+include:
+    - base
+    - /vnn

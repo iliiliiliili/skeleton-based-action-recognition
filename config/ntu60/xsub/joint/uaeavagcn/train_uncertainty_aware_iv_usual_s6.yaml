@@ -1,0 +1,15 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_iv_usual_uncertainty_aware_trained
+
+model: model.vnn_multioutput_agcn.UncertaintyAwareEarlyAttentionVAGCN
+model_args:
+    samples: 6
+    training_method: uncertainty_aware
+    INIT_WEIGHTS: usual
+
+MODEL_NAME: uaeavagcn
+
+init_vnn_from: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/agcn.best.pt
+
+include:
+    - base
+    - /vnn

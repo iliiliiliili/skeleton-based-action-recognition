@@ -1,0 +1,16 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_variational_trained_afl0.5
+
+model: model.vnn_multioutput_agcn.UncertaintyAwareEarlyAttentionVAGCN
+model_args:
+    samples: 2
+    attention_filter_limit: 0.5
+    training_method: variational
+
+MODEL_NAME: uaeavagcn
+
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_s2_variational_trained.best.pt
+phase: test
+
+include:
+    - base
+    - /vnn

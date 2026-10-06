@@ -1,0 +1,7 @@
+fire
+tabulate
+plotnine
+simple_colors
+pygifsicle
+imageio
+opencv-python

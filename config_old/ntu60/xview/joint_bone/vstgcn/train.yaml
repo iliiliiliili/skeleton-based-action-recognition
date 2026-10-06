@@ -1,0 +1,12 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES
+
+# model
+model: model.vnn_stgcn.VStgcn
+model_args:
+  samples: 2
+
+MODEL_NAME: vstgcn
+
+include:
+  - base
+  - /vnn

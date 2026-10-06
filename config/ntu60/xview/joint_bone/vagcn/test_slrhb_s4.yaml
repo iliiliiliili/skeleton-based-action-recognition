@@ -1,0 +1,17 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_slr
+
+model: model.vnn_agcn.VAGCN
+model_args:
+    samples: 4
+
+MODEL_NAME: vagcn
+
+base_lr: 0.05
+batch_size: 32
+
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_slr.best.pt
+phase: test
+
+include:
+    - base
+    - /vnn

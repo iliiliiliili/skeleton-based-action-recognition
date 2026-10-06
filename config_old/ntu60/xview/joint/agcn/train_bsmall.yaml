@@ -1,0 +1,11 @@
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL_b$BATCH_SIZE
+
+# model
+model: model.agcn.AGCN
+
+MODEL_NAME: agcn
+
+include:
+  - base
+
+batch_size: 56

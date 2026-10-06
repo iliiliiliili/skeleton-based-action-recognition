@@ -1,0 +1,11 @@
+work_dir: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL
+
+model: model.agcn.AGCN
+
+MODEL_NAME: agcn
+
+weights: ./runs/baselines/$DATASET/$SPLIT/$STREAMS/$MODEL.best.pt
+phase: test
+
+include:
+    - base

@@ -1,0 +1,12 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b$BATCH_SIZE_variational_trained
+
+model: model.vnn_multioutput_agcn.UncertaintyAwareEarlyAttentionVAGCN
+model_args:
+    samples: 6
+    training_method: variational
+
+MODEL_NAME: uaeavagcn
+
+include:
+    - base
+    - /vnn

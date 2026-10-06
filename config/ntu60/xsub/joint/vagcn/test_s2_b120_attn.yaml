@@ -1,0 +1,18 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b120
+
+model: model.vnn_multioutput_agcn.VAGCN
+model_args:
+    samples: 2
+
+MODEL_NAME: vagcn
+
+weights: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES_b120.best.pt
+phase: test
+draw_attention: true
+
+test_samples: [5,10,15,20,30,40]
+test_batch_sizes: [512,256,256,128,128,128]
+
+include:
+    - base
+    - /vnn

@@ -1,7 +1,9 @@
 # Created by .ignore support plugin (hsz.mobi)
-
+.vscode
 .idea/
 runs/
+old_runs/
+old_config/
 work_dir/
 
 ### Python template
@@ -108,3 +110,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+inclusion_table.txt
+
+plots
+debug_runs
+ood_experiments
+ood_runs

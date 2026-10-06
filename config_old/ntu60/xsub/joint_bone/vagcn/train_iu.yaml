@@ -1,0 +1,13 @@
+work_dir: ./runs/vnn/$DATASET/$SPLIT/$STREAMS/$MODEL_s$SAMPLES
+
+# model
+model: model.iu_vnn_agcn.IUVAGCN
+model_args:
+  samples: 1
+  iu_layers: [5, 10]
+
+MODEL_NAME: vagcn
+
+include:
+  - base
+  - /vnn
