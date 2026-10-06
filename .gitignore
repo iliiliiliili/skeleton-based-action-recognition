@@ -110,7 +110,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-inclusion_table.txt
+*_table.*
 
 plots
 debug_runs

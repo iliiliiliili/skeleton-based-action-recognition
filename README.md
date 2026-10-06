@@ -1,4 +1,4 @@
-# Implementation of [Variational Graph Convolutional Neural Networks](https://arxiv.org/abs/2507.01699) for skeleton-based human action recognition
+# Implementation of Variational Graph Convolutional Neural Networks for skeleton-based human action recognition
 
 ## Installation
 
